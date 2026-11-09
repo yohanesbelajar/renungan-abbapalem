@@ -51,7 +51,7 @@ export default function DevotionForm({
 
   async function save(status: "draft" | "published" | "scheduled", scheduleAt?: string) {
     if (!form.title.trim()) return setError("Judul wajib diisi.");
-    if (!form.devotion_date) return setError("Tanggal renungan wajib diisi.");
+    if (!form.devotion_date) return setError("Tanggal saat teduh wajib diisi.");
     if (status === "scheduled" && !scheduleAt)
       return setError("Isi waktu tayang untuk penjadwalan.");
 
@@ -93,7 +93,7 @@ export default function DevotionForm({
       const msg = result.error.message;
       if (msg.includes("duplicate key")) {
         if (msg.includes("devotion_date"))
-          setError("Tanggal itu sudah dipakai renungan lain — satu tanggal satu renungan.");
+          setError("Tanggal itu sudah dipakai saat teduh lain — satu tanggal satu saat teduh.");
         else if (msg.includes("slug"))
           setError("Judul ini sudah dipakai — ubah judul sedikit agar berbeda.");
         else setError(msg);
@@ -102,7 +102,7 @@ export default function DevotionForm({
       }
       return;
     }
-    router.push("/admin/renungan");
+    router.push("/admin/saat-teduh");
     router.refresh();
   }
 
@@ -126,7 +126,7 @@ export default function DevotionForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="text-sm font-medium">Tanggal renungan *</label>
+          <label className="text-sm font-medium">Tanggal saat teduh *</label>
           <input
             type="date"
             className={inputCls}
@@ -135,7 +135,7 @@ export default function DevotionForm({
             required
           />
           <p className="mt-1 text-xs text-slate-500">
-            Satu tanggal satu renungan — basis data menolak tanggal ganda.
+            Satu tanggal satu saat teduh — basis data menolak tanggal ganda.
           </p>
         </div>
         <div>
@@ -177,7 +177,7 @@ export default function DevotionForm({
         />
       </div>
       <div>
-        <label className="text-sm font-medium">Isi renungan</label>
+        <label className="text-sm font-medium">Isi saat teduh</label>
         <textarea
           className={inputCls}
           rows={12}

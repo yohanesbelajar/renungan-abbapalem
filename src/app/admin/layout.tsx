@@ -36,10 +36,10 @@ export default async function AdminLayout({
           <Link href="/admin" className="rounded px-2 py-2 hover:bg-slate-100">
             Dashboard
           </Link>
-          <Link href="/admin/renungan" className="rounded px-2 py-2 hover:bg-slate-100">
-            Renungan
+          <Link href="/admin/saat-teduh" className="rounded px-2 py-2 hover:bg-slate-100">
+            Saat Teduh
           </Link>
-          <Link href="/admin/renungan/baru" className="rounded px-2 py-2 hover:bg-slate-100">
+          <Link href="/admin/saat-teduh/baru" className="rounded px-2 py-2 hover:bg-slate-100">
             Tulis Baru
           </Link>
           <Link href="/admin/statistik" className="rounded px-2 py-2 hover:bg-slate-100">

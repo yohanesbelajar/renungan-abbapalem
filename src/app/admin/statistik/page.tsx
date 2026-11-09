@@ -11,7 +11,7 @@ export default async function AdminStatsPage() {
   return (
     <div>
       <h1 className="text-xl font-bold text-slate-900">Statistik</h1>
-      <p className="mt-1 text-sm text-slate-500">Jumlah heart dan penanda selesai per renungan.</p>
+      <p className="mt-1 text-sm text-slate-500">Jumlah heart dan penanda selesai per saat teduh.</p>
       {stats && stats.length > 0 ? (
         <table className="mt-4 w-full text-left text-sm">
           <thead className="border-b border-slate-200 text-xs text-slate-500">

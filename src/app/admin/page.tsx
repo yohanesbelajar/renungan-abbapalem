@@ -34,7 +34,7 @@ export default async function AdminDashboard() {
       <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
 
       <div className="mt-4 rounded-lg border border-slate-200 p-4">
-        <p className="text-sm text-slate-500">Renungan hari ini ({formatTanggalID(today)})</p>
+        <p className="text-sm text-slate-500">Saat Teduh hari ini ({formatTanggalID(today)})</p>
         {todayDevotion ? (
           <div className="mt-1 flex items-center justify-between">
             <p className="font-semibold">
@@ -44,7 +44,7 @@ export default async function AdminDashboard() {
               </span>
             </p>
             <Link
-              href={`/admin/renungan/${todayDevotion.slug}`}
+              href={`/admin/saat-teduh/${todayDevotion.slug}`}
               className="text-sm text-[#2B4F8F] hover:underline"
             >
               Edit
@@ -52,12 +52,12 @@ export default async function AdminDashboard() {
           </div>
         ) : (
           <div className="mt-1 flex items-center justify-between">
-            <p className="text-slate-600">Belum ada renungan untuk hari ini.</p>
+            <p className="text-slate-600">Belum ada saat teduh untuk hari ini.</p>
             <Link
-              href="/admin/renungan/baru"
+              href="/admin/saat-teduh/baru"
               className="rounded-full bg-[#2B4F8F] px-4 py-2 text-sm text-white"
             >
-              Tulis Renungan
+              Tulis Saat Teduh
             </Link>
           </div>
         )}
@@ -72,7 +72,7 @@ export default async function AdminDashboard() {
                 <li key={d.id} className="flex justify-between gap-2">
                   <span className="truncate">{d.title}</span>
                   <Link
-                    href={`/admin/renungan/${d.title}`}
+                    href={`/admin/saat-teduh/${d.title}`}
                     className="shrink-0 text-[#2B4F8F] hover:underline"
                   >
                     Edit
@@ -100,7 +100,7 @@ export default async function AdminDashboard() {
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-slate-500">Tidak ada renungan terjadwal.</p>
+            <p className="mt-2 text-sm text-slate-500">Tidak ada saat teduh terjadwal.</p>
           )}
         </div>
       </div>

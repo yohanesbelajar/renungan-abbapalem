@@ -112,7 +112,7 @@ export default async function DevotionPage({
         <Link href="/" className="hover:text-[#2B4F8F]">
           Beranda
         </Link>{" "}
-        › <span>Renungan</span>
+        › <span>Saat Teduh</span>
       </nav>
 
       <header className="mt-4">
@@ -156,14 +156,14 @@ export default async function DevotionPage({
       {/* Navigasi sebelum/berikutnya */}
       <nav className="mt-10 flex justify-between gap-3 text-sm">
         {prev ? (
-          <Link href={`/renungan/${prev.slug}`} className="hover:text-[#2B4F8F]">
+          <Link href={`/saat-teduh/${prev.slug}`} className="hover:text-[#2B4F8F]">
             ← Sebelumnya: {prev.title}
           </Link>
         ) : (
           <span />
         )}
         {next ? (
-          <Link href={`/renungan/${next.slug}`} className="hover:text-[#2B4F8F]">
+          <Link href={`/saat-teduh/${next.slug}`} className="hover:text-[#2B4F8F]">
             Berikutnya: {next.title} →
           </Link>
         ) : (
@@ -175,7 +175,7 @@ export default async function DevotionPage({
       {related && related.length > 0 && (
         <section className="mt-10">
           <h2 className="text-lg font-semibold text-slate-700">
-            Renungan terkait
+            Saat Teduh terkait
           </h2>
           <div className="mt-3 grid gap-3">
             {related.map((r: DevotionCard) => (

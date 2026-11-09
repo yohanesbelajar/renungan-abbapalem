@@ -8,9 +8,9 @@ import { DevotionCard } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Arsip Renungan",
+  title: "Arsip Saat Teduh",
   description:
-    "Jelajahi seluruh renungan harian Abbalove Palem — filter berdasarkan bulan, tahun, dan tema.",
+    "Jelajahi seluruh saat teduh harian Abbalove Palem — filter berdasarkan bulan, tahun, dan tema.",
 };
 
 const MONTHS = [
@@ -66,9 +66,9 @@ export default async function ArchivePage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-slate-900">Arsip Renungan</h1>
+      <h1 className="text-2xl font-bold text-slate-900">Arsip Saat Teduh</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Cari renungan berdasarkan bulan atau tema.
+        Cari saat teduh berdasarkan bulan atau tema.
       </p>
 
       {/* Filter */}
@@ -125,7 +125,7 @@ export default async function ArchivePage({
       </div>
       {(!devotions || devotions.length === 0) && (
         <p className="mt-6 rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">
-          Tidak ada renungan yang cocok dengan filter ini.
+          Tidak ada saat teduh yang cocok dengan filter ini.
         </p>
       )}
     </div>

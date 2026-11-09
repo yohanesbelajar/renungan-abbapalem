@@ -55,7 +55,7 @@ export default async function ProfilePage() {
       <div className="mt-6 grid grid-cols-2 gap-3">
         <div className="rounded-lg border border-slate-200 p-4 text-center">
           <p className="text-3xl font-bold text-[#2B4F8F]">{completedCount ?? 0}</p>
-          <p className="mt-1 text-sm text-slate-600">Renungan selesai dibaca</p>
+          <p className="mt-1 text-sm text-slate-600">Saat Teduh selesai dibaca</p>
         </div>
         <div className="rounded-lg border border-slate-200 p-4 text-center">
           <p className="text-3xl font-bold text-[#B4433E]">{heartCount ?? 0}</p>
@@ -76,7 +76,7 @@ export default async function ProfilePage() {
             };
             return (
               <li key={d.slug} className="flex items-center justify-between py-3">
-                <Link href={`/renungan/${d.slug}`} className="hover:text-[#2B4F8F]">
+                <Link href={`/saat-teduh/${d.slug}`} className="hover:text-[#2B4F8F]">
                   {d.title}
                 </Link>
                 <span className="text-xs text-slate-500">
@@ -88,7 +88,7 @@ export default async function ProfilePage() {
         </ul>
       ) : (
         <p className="mt-3 text-sm text-slate-500">
-          Belum ada renungan yang ditandai selesai. Baca renungan lalu tekan
+          Belum ada saat teduh yang ditandai selesai. Baca saat teduh lalu tekan
           “Tandai selesai membaca”.
         </p>
       )}

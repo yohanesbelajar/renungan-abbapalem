@@ -4,7 +4,7 @@ import { SITE_NAME, VALUE_STATEMENT } from "@/lib/constants";
 export const metadata: Metadata = {
   title: "Tentang",
   description:
-    "Tentang renungan harian Abbalove Palem — bagian dari keluarga besar Abbalove Ministries.",
+    "Tentang saat teduh harian Abbalove Palem — bagian dari keluarga besar Abbalove Ministries.",
 };
 
 export default function AboutPage() {
@@ -22,7 +22,7 @@ export default function AboutPage() {
         berjalan bersama Tuhan, setiap hari.
       </p>
       <p className="mt-4">
-        Renungan harian ini disusun oleh tim penulis renungan Abbalove Palem
+        Saat Teduh harian ini disusun oleh tim penulis saat teduh Abbalove Palem
         untuk menemani jemaat dan pembaca di mana pun berada: membaca firman,
         merenungkannya, dan menerapkannya dalam kehidupan sehari-hari.
       </p>

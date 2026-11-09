@@ -92,7 +92,7 @@ export default function RegisterPage() {
     <div className="mx-auto max-w-sm px-4 py-12">
       <h1 className="text-2xl font-bold text-slate-900">Daftar</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Buat akun untuk memberi heart dan menandai renungan selesai.
+        Buat akun untuk memberi heart dan menandai saat teduh selesai.
       </p>
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div>

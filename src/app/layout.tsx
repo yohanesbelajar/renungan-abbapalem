@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: `%s · ${SITE_NAME}`,
   },
   description:
-    "Renungan harian Abbalove Palem — berjalan bersama Tuhan, setiap hari.",
+    "Saat Teduh harian Abbalove Palem — berjalan bersama Tuhan, setiap hari.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

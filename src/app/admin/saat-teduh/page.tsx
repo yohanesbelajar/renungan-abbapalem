@@ -16,9 +16,9 @@ export default async function AdminDevotionList() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-900">Renungan</h1>
+        <h1 className="text-xl font-bold text-slate-900">Saat Teduh</h1>
         <Link
-          href="/admin/renungan/baru"
+          href="/admin/saat-teduh/baru"
           className="rounded-full bg-[#2B4F8F] px-4 py-2 text-sm text-white"
         >
           Tulis Baru
@@ -50,7 +50,7 @@ export default async function AdminDevotionList() {
                 <td className="py-2">{d.hearts_count}</td>
                 <td className="py-2 text-right">
                   <Link
-                    href={`/admin/renungan/${d.slug}`}
+                    href={`/admin/saat-teduh/${d.slug}`}
                     className="text-[#2B4F8F] hover:underline"
                   >
                     Edit
@@ -62,7 +62,7 @@ export default async function AdminDevotionList() {
         </table>
       ) : (
         <p className="mt-6 text-sm text-slate-500">
-          Belum ada renungan. Klik “Tulis Baru” untuk membuat yang pertama.
+          Belum ada saat teduh. Klik “Tulis Baru” untuk membuat yang pertama.
         </p>
       )}
     </div>

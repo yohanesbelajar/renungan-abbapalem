@@ -1,10 +1,10 @@
-# Abbalove Palem — Renungan Harian
+# Abbalove Palem — Saat Teduh
 
-Website renungan harian Abbalove Palem (bagian dari keluarga besar Abbalove
+Website saat teduh harian Abbalove Palem (bagian dari keluarga besar Abbalove
 Ministries). Dibangun sesuai PRD dan Rencana Tahap 1 — jangan ubah aturan
 identitas tanpa persetujuan Jo.
 
-- Nama yang dipakai: **Abbalove Palem — Renungan Harian** (jangan pernah
+- Nama yang dipakai: **Abbalove Palem — Saat Teduh** (jangan pernah
   "Abbalove Taman Palem").
 - Kredit kutipan wajib: **"Dikutip dari ALKITAB (TB) © LAI 1974"** — sudah
   otomatis di bawah setiap kutipan dan di footer.
@@ -46,20 +46,20 @@ identitas tanpa persetujuan Jo.
 ```
 src/app/            halaman (App Router)
   page.tsx          beranda
-  renungan/[slug]/  halaman baca
+  saat teduh/[slug]/  halaman baca
   arsip/ tentang/ masuk/ daftar/ profil/
-  admin/            dashboard, renungan, statistik, pengguna
+  admin/            dashboard, saat teduh, statistik, pengguna
   auth/callback/    callback verifikasi/reset Supabase
   api/publish-scheduled/  cron penerbitan terjadwal
-src/components/     Header, Footer, kartu renungan, aksi heart/selesai, form admin
+src/components/     Header, Footer, kartu saat teduh, aksi heart/selesai, form admin
 src/lib/            klien Supabase (client/server/service), konstanta, tanggal
 middleware.ts       refresh sesi Supabase
 ```
 
 ## Aturan penting
 
-- Satu tanggal satu renungan — `devotion_date` unik di basis data.
-- Heart & penanda selesai: kunci ganda (user+renungan) — ganda mustahil.
+- Satu tanggal satu saat teduh — `devotion_date` unik di basis data.
+- Heart & penanda selesai: kunci ganda (user+saat teduh) — ganda mustahil.
 - RLS aktif di semua tabel (lihat schema.sql) — jangan dilonggarkan.
 - Role admin/editor hanya lewat dashboard admin (RPC `set_user_role`),
   tidak ada lewat pendaftaran.

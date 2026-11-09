@@ -26,7 +26,7 @@ export default async function EditDevotionPage({
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-slate-900">Edit Renungan</h1>
+      <h1 className="text-xl font-bold text-slate-900">Edit Saat Teduh</h1>
       <p className="mt-1 text-sm text-slate-500">
         Status saat ini: <strong>{d.status}</strong> · ♥ {d.hearts_count} · ✓{" "}
         {selesai ?? 0} selesai dibaca

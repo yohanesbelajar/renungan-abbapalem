@@ -6,7 +6,7 @@ import { TAGLINE, SITE_NAME } from "@/lib/constants";
 
 
 const STEPS = [
-  { n: 1, t: "Baca", d: "Buka renungan hari ini dan baca isinya dengan tenang." },
+  { n: 1, t: "Baca", d: "Buka saat teduh hari ini dan baca isinya dengan tenang." },
   { n: 2, t: "Renungkan", d: "Pikirkan pertanyaan refleksi yang disediakan." },
   { n: 3, t: "Terapkan", d: "Jalankan satu langkah nyata dari firman hari ini." },
 ];
@@ -55,26 +55,26 @@ export default async function HomePage() {
             “{TAGLINE}”
           </h1>
           <p className="mt-3 text-slate-600">
-            Satu renungan setiap hari untuk jemaat Abbalove Palem dan pembaca
+            Satu saat teduh setiap hari untuk jemaat Abbalove Palem dan pembaca
             semua tempat.
           </p>
           {featured && (
             <Link
-              href={`/renungan/${featured.slug}`}
+              href={`/saat-teduh/${featured.slug}`}
               className="mt-6 inline-block rounded-full bg-[#2B4F8F] px-6 py-3 text-white transition hover:bg-[#22406f]"
             >
-              Baca Renungan Hari Ini
+              Baca Saat Teduh Hari Ini
             </Link>
           )}
         </div>
       </section>
 
-      {/* Renungan hari ini / terbaru */}
+      {/* Saat Teduh hari ini / terbaru */}
       <section className="mx-auto max-w-3xl px-4 py-10">
         {featured ? (
           <div>
             <h2 className="text-lg font-semibold text-slate-700">
-              Renungan {featured.devotion_date === today ? "Hari Ini" : "Terbaru"}
+              Saat Teduh {featured.devotion_date === today ? "Hari Ini" : "Terbaru"}
             </h2>
             <div className="mt-3">
               <DevotionCardItem d={featured} />
@@ -82,7 +82,7 @@ export default async function HomePage() {
           </div>
         ) : (
           <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">
-            Belum ada renungan hari ini. Renungan berikutnya segera hadir —
+            Belum ada saat teduh hari ini. Saat Teduh berikutnya segera hadir —
             “{TAGLINE}”.
           </p>
         )}
@@ -125,7 +125,7 @@ export default async function HomePage() {
             </div>
           ) : (
             <p className="mt-3 text-sm text-slate-500">
-              Arsip masih kosong. Renungan yang diterbitkan akan tampil di sini.
+              Arsip masih kosong. Saat Teduh yang diterbitkan akan tampil di sini.
             </p>
           )}
         </div>
