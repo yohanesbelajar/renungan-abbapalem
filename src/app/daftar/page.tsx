@@ -6,6 +6,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import GoogleButton from "@/components/GoogleButton";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -94,7 +95,15 @@ export default function RegisterPage() {
       <p className="mt-1 text-sm text-slate-500">
         Buat akun untuk memberi heart dan menandai saat teduh selesai.
       </p>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <div className="mt-6">
+        <GoogleButton next="/profil" />
+        <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          atau dengan email
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+      </div>
+      <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="name" className="text-sm font-medium">
             Nama lengkap

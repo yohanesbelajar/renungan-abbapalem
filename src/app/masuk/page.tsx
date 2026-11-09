@@ -6,6 +6,7 @@ import { Suspense, useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import GoogleButton from "@/components/GoogleButton";
 
 export default function LoginPage() {
   return (
@@ -53,7 +54,15 @@ function LoginInner() {
   return (
     <div className="mx-auto max-w-sm px-4 py-12">
       <h1 className="text-2xl font-bold text-slate-900">Masuk</h1>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <div className="mt-6">
+        <GoogleButton next={next} />
+        <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          atau dengan email
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+      </div>
+      <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="text-sm font-medium">
             Email
