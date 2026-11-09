@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Arsip Saat Teduh",
   description:
-    "Jelajahi seluruh saat teduh harian Abbalove Palem — filter berdasarkan bulan, tahun, dan tema.",
+    "Cari saat teduh berdasarkan topik, ayat, bulan, atau tema — arsip harian Abbalove Palem.",
 };
 
 const MONTHS = [
@@ -18,17 +18,30 @@ const MONTHS = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
+// Bersihkan istilah pencarian dari karakter khusus sintaks PostgREST
+// (koma, kurung, bintang, %, _) supaya filter .or() tidak rusak.
+function sanitize(q: string): string {
+  return q.replace(/[%,*()_]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function bulanDari(ym: string): string {
+  return `${MONTHS[parseInt(ym.slice(5))]} ${ym.slice(0, 4)}`;
+}
+
 export default async function ArchivePage({
   searchParams,
 }: {
-  searchParams: Promise<{ bulan?: string; tema?: string }>;
+  searchParams: Promise<{ bulan?: string; tema?: string; cari?: string }>;
 }) {
   const sp = await searchParams;
   const supabase = await createClient();
+  const cari = sanitize(sp.cari ?? "");
 
   let q = supabase
     .from("devotions")
-    .select("slug, devotion_date, title, summary, theme, hearts_count")
+    .select(
+      "slug, devotion_date, title, summary, theme, verse_reference, hearts_count"
+    )
     .eq("status", "published")
     .order("devotion_date", { ascending: false })
     .limit(60);
@@ -43,9 +56,25 @@ export default async function ArchivePage({
   }
   if (sp.tema) q = q.eq("theme", sp.tema);
 
+  // Pencarian topik & ayat: judul, ringkasan, tema, referensi ayat, isi.
+  // Varian kedua menyisipkan spasi sebelum angka agar "matius9" tetap
+  // menemukan "Matius 9".
+  if (cari) {
+    const pats = new Set([cari]);
+    const alt = cari.replace(/(\D)(\d)/g, "$1 $2");
+    if (alt !== cari) pats.add(alt);
+    const cond = [...pats]
+      .map(
+        (p) =>
+          `title.ilike.*${p}*,summary.ilike.*${p}*,theme.ilike.*${p}*,verse_reference.ilike.*${p}*,body.ilike.*${p}*`
+      )
+      .join(",");
+    q = q.or(cond);
+  }
+
   const { data: devotions } = await q;
 
-  // Opsi filter: tahun-tahun yang ada + daftar tema
+  // Opsi filter: tahun-tahun yang ada + daftar tema + topik bulanan
   const { data: allPub } = await supabase
     .from("devotions")
     .select("devotion_date, theme")
@@ -64,15 +93,71 @@ export default async function ArchivePage({
     ),
   ].sort();
 
+  // Topik bulanan: tema menonjol per bulan (tema paling sering muncul)
+  const bulanan = new Map<string, { label: string; theme: string | null }>();
+  for (const d of allPub ?? []) {
+    const ym = d.devotion_date.slice(0, 7);
+    if (!bulanan.has(ym)) bulanan.set(ym, { label: bulanDari(ym), theme: null });
+    if (d.theme && !bulanan.get(ym)!.theme) bulanan.get(ym)!.theme = d.theme;
+  }
+  const topikBulanan = [...bulanan.entries()].sort((a, b) =>
+    b[0].localeCompare(a[0])
+  );
+
+  // Kelompokkan hasil per bulan untuk penanda tema bulan di arsip
+  type Grup = { ym: string; label: string; theme: string | null; items: DevotionCard[] };
+  const grup: Grup[] = [];
+  for (const d of (devotions ?? []) as DevotionCard[]) {
+    const ym = d.devotion_date.slice(0, 7);
+    let g = grup[grup.length - 1];
+    if (!g || g.ym !== ym) {
+      g = { ym, label: bulanDari(ym), theme: null, items: [] };
+      grup.push(g);
+    }
+    g.items.push(d);
+  }
+  for (const g of grup) {
+    const hitung = new Map<string, number>();
+    for (const d of g.items)
+      if (d.theme) hitung.set(d.theme, (hitung.get(d.theme) ?? 0) + 1);
+    g.theme =
+      [...hitung.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  }
+
+  const adaFilter = !!(sp.bulan || sp.tema || sp.cari);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="text-2xl font-bold text-slate-900">Arsip Saat Teduh</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Cari saat teduh berdasarkan bulan atau tema.
+        Cari berdasarkan topik atau ayat — mis. “jiwa” atau “Matius 9”.
       </p>
 
-      {/* Filter */}
-      <form method="GET" action="/arsip" className="mt-4 flex flex-wrap gap-2">
+      {/* Pencarian topik / ayat */}
+      <form
+        method="GET"
+        action="/arsip"
+        className="mt-4 flex flex-wrap gap-2"
+      >
+        <input
+          type="search"
+          name="cari"
+          defaultValue={sp.cari ?? ""}
+          placeholder="Cari topik atau ayat… (jiwa, Matius 9)"
+          className="min-h-11 min-w-0 flex-1 rounded border border-slate-300 bg-white px-3 py-2 text-sm"
+          aria-label="Cari topik atau ayat"
+        />
+        <button
+          type="submit"
+          className="min-h-11 rounded-full bg-[#2B4F8F] px-5 py-2 text-sm text-white"
+        >
+          Cari
+        </button>
+      </form>
+
+      {/* Filter bulan & tema */}
+      <form method="GET" action="/arsip" className="mt-2 flex flex-wrap gap-2">
+        {sp.cari && <input type="hidden" name="cari" value={sp.cari} />}
         <select
           name="bulan"
           defaultValue={sp.bulan ?? ""}
@@ -103,11 +188,11 @@ export default async function ArchivePage({
         </select>
         <button
           type="submit"
-          className="min-h-11 rounded-full bg-[#2B4F8F] px-4 py-2 text-sm text-white"
+          className="min-h-11 rounded-full border border-[#2B4F8F] px-4 py-2 text-sm text-[#2B4F8F]"
         >
           Tampilkan
         </button>
-        {(sp.bulan || sp.tema) && (
+        {adaFilter && (
           <Link
             href="/arsip"
             className="flex min-h-11 items-center rounded-full border border-slate-300 px-4 py-2 text-sm"
@@ -117,15 +202,55 @@ export default async function ArchivePage({
         )}
       </form>
 
-      {/* Daftar */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        {(devotions ?? []).map((d: DevotionCard) => (
-          <DevotionCardItem key={d.slug} d={d} />
+      {/* Topik bulanan menonjol */}
+      {!sp.bulan && topikBulanan.length > 0 && (
+        <section className="mt-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Topik tiap bulan
+          </h2>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {topikBulanan.map(([ym, v]) => (
+              <Link
+                key={ym}
+                href={`/arsip?bulan=${ym}`}
+                className="rounded-full border border-[#2B4F8F]/30 bg-[#EEF3FB] px-3 py-1.5 text-sm font-medium text-[#2B4F8F] hover:bg-[#DCE7F8]"
+              >
+                {v.label}
+                {v.theme ? ` — ${v.theme}` : ""}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Hasil, dikelompokkan per bulan dengan tema bulan */}
+      <div className="mt-6 space-y-6">
+        {grup.map((g) => (
+          <section key={g.ym}>
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
+              <h2 className="text-base font-bold text-slate-800">{g.label}</h2>
+              {g.theme && (
+                <Link
+                  href={`/arsip?tema=${encodeURIComponent(g.theme)}`}
+                  className="rounded-full bg-[#2B4F8F] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#22406f]"
+                >
+                  Tema bulan: {g.theme}
+                </Link>
+              )}
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {g.items.map((d) => (
+                <DevotionCardItem key={d.slug} d={d} />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
+
       {(!devotions || devotions.length === 0) && (
         <p className="mt-6 rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">
-          Tidak ada saat teduh yang cocok dengan filter ini.
+          Tidak ada saat teduh yang cocok
+          {cari ? ` dengan kata “${cari}”` : " dengan filter ini"}.
         </p>
       )}
     </div>

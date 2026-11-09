@@ -24,6 +24,7 @@ export interface DevotionCard {
   title: string;
   summary: string;
   theme: string | null;
+  verse_reference?: string | null;
   hearts_count: number;
 }
 
