@@ -329,8 +329,221 @@ body {
   border-top: 1px solid #cbd5e1;
   margin: 1rem 0;
 }
+.isi-editor h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--color-plum);
+}
+.isi-editor pre {
+  background: var(--color-krem-2);
+  border: 1px solid var(--color-garis);
+  border-radius: 8px;
+  padding: 0.7rem 0.85rem;
+  font-size: 14px;
+  overflow-x: auto;
+}
+.isi-editor pre code {
+  background: none;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.isi-editor :not(pre) > code {
+  background: var(--color-krem-2);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+.isi-editor mark {
+  background: #fde68a;
+  border-radius: 3px;
+  padding: 0.05em 0.15em;
+}
+.isi-editor sub,
+.isi-editor sup {
+  font-size: 0.75em;
+  line-height: 0;
+}
+/* Tabel di editor */
+.isi-editor table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14.5px;
+}
+.isi-editor th,
+.isi-editor td {
+  border: 1px solid #cbd5e1;
+  padding: 0.4rem 0.55rem;
+  vertical-align: top;
+  position: relative;
+}
+.isi-editor th {
+  background: var(--color-krem-2);
+  font-weight: 700;
+}
+.isi-editor .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(150, 50, 150, 0.14);
+  pointer-events: none;
+}
+/* Daftar tugas di editor */
+.isi-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.15rem;
+}
+.isi-editor ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.isi-editor ul[data-type="taskList"] li > label {
+  margin-top: 0.25rem;
+}
+.isi-editor ul[data-type="taskList"] input[type="checkbox"] {
+  width: 0.95rem;
+  height: 0.95rem;
+  accent-color: var(--color-ungu);
+}
+.isi-editor ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
 .isi-editor:focus-visible {
   outline: none;
+}
+
+/* ---- Blok tambahan dari editor lengkap (tabel, daftar tugas, kode) ---- */
+
+/* Judul: gaya menempel ke elemen di dalam pembungkus blok */
+.blok-h2 h2 {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-plum);
+  margin: 0;
+}
+.blok-h3 h3 {
+  font-size: 17.5px;
+  font-weight: 700;
+  color: var(--color-plum);
+  margin: 0;
+}
+/* Label PDF (Pengajar/Pengajaran/…) — biru kecil huruf besar */
+.blok-label h2,
+.blok-label h3 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #1a34c8;
+  margin: 0;
+}
+/* Kutipan: blok <blockquote> di dalam pembungkus berlatar */
+.kutipan-isi blockquote {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  font-style: inherit;
+}
+
+/* Judul 1 di dalam isi — tetap ringkas, bukan banner */
+.isi-teduh h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-plum);
+}
+
+/* Tabel */
+.bungkus-tabel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15.5px;
+}
+.bungkus-tabel th,
+.bungkus-tabel td {
+  border: 1px solid var(--color-garis);
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+.bungkus-tabel th {
+  background: var(--color-krem-2);
+  font-weight: 700;
+}
+.bungkus-tabel p {
+  margin: 0;
+}
+
+/* Daftar tugas (checklist) */
+.daftar-tugas ul {
+  list-style: none;
+  padding-left: 0;
+}
+.daftar-tugas li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+.daftar-tugas li + li {
+  margin-top: 0.5rem;
+}
+.daftar-tugas input[type="checkbox"] {
+  margin-top: 0.4rem;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-ungu);
+  flex-shrink: 0;
+}
+
+/* Blok kode */
+.bungkus-kode pre {
+  margin: 0;
+  overflow-x: auto;
+  background: var(--color-krem-2);
+  border: 1px solid var(--color-garis);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.bungkus-kode code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: none;
+  padding: 0;
+}
+.isi-teduh code {
+  background: var(--color-krem-2);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+/* Sorotan & warna teks dari editor */
+.isi-teduh mark {
+  background: #fde68a;
+  color: inherit;
+  padding: 0.05em 0.15em;
+  border-radius: 3px;
+}
+
+/* Rata teks dari editor */
+.isi-teduh [style*="text-align: center"] {
+  text-align: center;
+}
+.isi-teduh [style*="text-align: right"] {
+  text-align: right;
+}
+.isi-teduh [style*="text-align: justify"] {
+  text-align: justify;
 }
 
 :focus-visible {

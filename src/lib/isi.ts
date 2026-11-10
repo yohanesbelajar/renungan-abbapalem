@@ -3,7 +3,18 @@
 // Semua pembaca wajib lewat di sini supaya keduanya tampil sama.
 
 export type BarisIsi = {
-  jenis: "paragraf" | "h2" | "h3" | "label" | "daftar" | "kutipan";
+  jenis:
+    | "paragraf"
+    | "h2"
+    | "h3"
+    | "label"
+    | "daftar"
+    | "tugas"
+    | "kutipan"
+    | "tabel"
+    | "kode"
+    | "pemisah";
+  /** Potongan HTML utuh, termasuk tag pembukanya. */
   html: string;
 };
 
@@ -12,6 +23,14 @@ const RE_TAG = /<\/?[a-z][^>]*>/i;
 export function isiHtml(isi: string): boolean {
   return RE_TAG.test(isi);
 }
+
+/** Tag yang dianggap memulai satu blok isi. */
+const TAG_BLOK = /^(p|h[1-6]|ul|ol|blockquote|pre|table|hr|div)$/i;
+/** Tag tanpa pasangan penutup. */
+const TAG_HAPUS = new Set([
+  "br", "hr", "img", "input", "col", "source", "track",
+  "area", "base", "link", "meta", "wbr",
+]);
 
 const escapeHtml = (s: string) =>
   s
@@ -79,40 +98,80 @@ export function teksKeHtml(isi: string): string {
   return keluar.filter(Boolean).join("");
 }
 
-/** Pecah HTML menjadi baris siap-render, dengan penanda baris "label PDF". */
+/** Pecah HTML menjadi baris siap-render, dengan penanda baris "label PDF".
+ *  Memakai pelacak kedalaman, bukan regex rakus, supaya tabel (yang berisi
+ *  <p> di dalam <td>) dan daftar bersarang tidak terpecah salah. */
 export function pecahIsi(isi: string): BarisIsi[] {
   const html = isiHtml(isi) ? isi : teksKeHtml(isi);
   const hasil: BarisIsi[] = [];
-  const re = /<(h1|h2|h3|p|ol|ul|blockquote|hr)\b([^>]*)>([\s\S]*?)<\/\1>|<hr\b[^>]*\/?>/gi;
+  const re = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b([^>]*?)(\/?)>/g;
+  const tumpukan: string[] = [];
+  let mulai = -1;
+  let namaBlok = "";
+  let sisip = 0; // posisi akhir blok terakhir yang diambil
+
+  const ambil = (sampai: number) => {
+    if (mulai < 0) return;
+    hasil.push(klasifikasi(namaBlok, html.slice(mulai, sampai)));
+    sisip = sampai;
+    mulai = -1;
+    tumpukan.length = 0;
+  };
+
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
-    if (!m[1]) {
-      hasil.push({ jenis: "paragraf", html: "<hr/>" });
+    const tutup = m[1] === "/";
+    const tag = m[2].toLowerCase();
+    const mandiri = m[4] === "/" || TAG_HAPUS.has(tag);
+
+    if (mulai < 0) {
+      if (!tutup && TAG_BLOK.test(tag)) {
+        if (mandiri) {
+          hasil.push(klasifikasi(tag, html.slice(m.index, re.lastIndex)));
+          sisip = re.lastIndex;
+        } else {
+          mulai = m.index;
+          namaBlok = tag;
+          tumpukan.push(tag);
+        }
+      }
       continue;
     }
-    const tag = m[1].toLowerCase();
-    const dalam = m[3].trim();
-    if (!dalam && tag !== "hr") continue;
-    if (tag === "h1" || tag === "h2" || tag === "h3") {
-      const teks = dalam.replace(/<[^>]+>/g, "").replace(/:$/, "").trim();
-      const labelPdf = /^(Pengantar|Pengajaran|Penerapan|Renungan|Pertanyaan)$/.test(teks);
-      hasil.push({
-        jenis: tag === "h3" ? "h3" : labelPdf ? "label" : "h2",
-        html: dalam,
-      });
-      continue;
+
+    if (mandiri) continue;
+    if (!tutup) {
+      tumpukan.push(tag);
+    } else {
+      const i = tumpukan.lastIndexOf(tag);
+      if (i < 0) continue; // penutup tanpa pasangan — abaikan
+      tumpukan.length = i;
+      if (tumpukan.length === 0) ambil(re.lastIndex);
     }
-    if (tag === "ol" || tag === "ul") {
-      hasil.push({ jenis: "daftar", html: `<${tag}>${m[3]}</${tag}>` });
-      continue;
-    }
-    if (tag === "blockquote") {
-      hasil.push({ jenis: "kutipan", html: dalam });
-      continue;
-    }
-    hasil.push({ jenis: "paragraf", html: dalam });
   }
+  if (mulai >= 0) ambil(html.length);
+
+  // Teks substansial di luar blok mana pun (jarang) tetap ditampilkan.
+  const sisa = html.slice(sisip).replace(/<[^>]+>/g, " ").trim();
+  if (sisa) hasil.push({ jenis: "paragraf", html: `<p>${escapeHtml(sisa)}</p>` });
+
   return hasil;
+}
+
+/** Kelas satu blok HTML utuh (tag pembuka sudah termasuk di dalamnya). */
+function klasifikasi(tag: string, blok: string): BarisIsi {
+  if (tag === "hr") return { jenis: "pemisah", html: blok };
+  if (tag === "table") return { jenis: "tabel", html: blok };
+  if (tag === "pre") return { jenis: "kode", html: blok };
+  if (tag === "blockquote") return { jenis: "kutipan", html: blok };
+  if (tag === "ul" && /data-type\s*=\s*["']?taskList/i.test(blok))
+    return { jenis: "tugas", html: blok };
+  if (tag === "ol" || tag === "ul") return { jenis: "daftar", html: blok };
+  if (/^h[1-6]$/.test(tag)) {
+    const teks = blok.replace(/<[^>]+>/g, "").replace(/:$/, "").trim();
+    const labelPdf = /^(Pengantar|Pengajaran|Penerapan|Renungan|Pertanyaan)$/.test(teks);
+    return { jenis: labelPdf ? "label" : Number(tag[1]) <= 2 ? "h2" : "h3", html: blok };
+  }
+  return { jenis: "paragraf", html: blok };
 }
 
 /** Ringkasan cadangan: beberapa kalimat awal isi (tanpa instruksi "Bacalah…"). */
@@ -171,14 +230,22 @@ export function teksPolos(isi: string): string {
 /** Buang tag berbahaya dan atribut peristiwa; sisakan format teks. */
 export function sanitasiHtml(html: string): string {
   return html
-    .replace(/<\s*(script|style|iframe|object|embed|form|input|link|meta)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
-    .replace(/<\s*(script|style|iframe|object|embed|form|input|link|meta)\b[^>]*\/?>/gi, "")
+    .replace(/<\s*(script|style|iframe|object|embed|form|link|meta)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*(script|style|iframe|object|embed|form|link|meta)\b[^>]*\/?>/gi, "")
+    // Kotak centang daftar tugas boleh ada, tapi dibuat mati agar tak bisa diklik.
+    .replace(/<input\b[^>]*>/gi, (tag) =>
+      /type\s*=\s*["']?checkbox/i.test(tag)
+        ? `<input type="checkbox" disabled${/checked/i.test(tag) ? " checked" : ""}>`
+        : "",
+    )
     .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
     .replace(/\s(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi, "")
     .replace(/\sstyle\s*=\s*("|')([^"']*)\1/gi, (_m, q, isi) => {
       const aman = String(isi)
         .split(";")
-        .filter((x) => /^\s*(color|background-color|text-align)\s*:/i.test(x))
+        .filter((x) =>
+          /^\s*(color|background-color|text-align|font-size|line-height)\s*:/i.test(x),
+        )
         .join(";");
       return aman ? ` style=${q}${aman}${q}` : "";
     });

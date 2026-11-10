@@ -9,6 +9,22 @@ import { RE_RUJUKAN, parseRujukan, type Rujukan } from "@/lib/ayat";
 import { pecahIsi, sanitasiHtml, tautkanAyatHtml, isiHtml, teksKeHtml } from "@/lib/isi";
 import { PopupAyat } from "@/components/AyatTeks";
 
+// Kelas pembungkus per jenis blok. `html` berisi blok utuh (sudah termasuk tag
+// pembukanya), jadi gaya judul diberikan lewat CSS ke elemen di dalamnya —
+// jangan membungkus <p> di dalam <p> atau <table> di dalam <p>.
+const KELAS: Record<string, string> = {
+  paragraf: "",
+  h2: "blok-h2 pt-2",
+  h3: "blok-h3 pt-1",
+  label: "blok-label pt-3",
+  daftar: "daftar-isi rounded-lg bg-krem-2 px-4 py-3 font-bold text-tinta",
+  tugas: "daftar-tugas rounded-lg bg-krem-2 px-4 py-3",
+  kutipan: "kutipan-isi border-l-[3px] border-ungu/40 bg-krem-2 px-4 py-3 italic text-tinta-2",
+  tabel: "bungkus-tabel overflow-x-auto rounded-lg border border-garis",
+  kode: "bungkus-kode",
+  pemisah: "",
+};
+
 export default function IsiTeduh({ isi }: { isi: string }) {
   const wadah = useRef<HTMLDivElement>(null);
   const [rujukan, setRujukan] = useState<Rujukan | null>(null);
@@ -52,49 +68,13 @@ export default function IsiTeduh({ isi }: { isi: string }) {
         ref={wadah}
         className="isi-teduh mt-8 space-y-4 text-[17.5px] leading-[1.85] text-[#121212]"
       >
-        {blok.map((b, i) => {
-          if (b.jenis === "h2")
-            return (
-              <h2
-                key={i}
-                className="judul-rapat-sm pt-2 text-[21px] text-plum"
-                dangerouslySetInnerHTML={{ __html: b.html }}
-              />
-            );
-          if (b.jenis === "h3")
-            return (
-              <h3
-                key={i}
-                className="pt-1 text-[17.5px] font-bold text-plum"
-                dangerouslySetInnerHTML={{ __html: b.html }}
-              />
-            );
-          if (b.jenis === "label")
-            return (
-              <h2
-                key={i}
-                className="pt-3 text-[13px] font-bold uppercase tracking-[0.08em]"
-                dangerouslySetInnerHTML={{ __html: b.html }}
-              />
-            );
-          if (b.jenis === "daftar")
-            return (
-              <div
-                key={i}
-                className="daftar-isi rounded-lg bg-krem-2 px-4 py-3 font-bold text-tinta"
-                dangerouslySetInnerHTML={{ __html: b.html }}
-              />
-            );
-          if (b.jenis === "kutipan")
-            return (
-              <blockquote
-                key={i}
-                className="border-l-[3px] border-ungu/40 bg-krem-2 px-4 py-3 italic"
-                dangerouslySetInnerHTML={{ __html: b.html }}
-              />
-            );
-          return <p key={i} dangerouslySetInnerHTML={{ __html: b.html }} />;
-        })}
+        {blok.map((b, i) => (
+          <div
+            key={i}
+            className={KELAS[b.jenis] ?? ""}
+            dangerouslySetInnerHTML={{ __html: b.html }}
+          />
+        ))}
       </div>
 
       {rujukan && <PopupAyat rujukan={rujukan} tutup={() => setRujukan(null)} />}
