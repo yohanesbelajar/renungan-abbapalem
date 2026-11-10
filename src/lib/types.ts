@@ -32,6 +32,6 @@ export interface Profile {
   id: string;
   email: string;
   display_name: string | null;
-  role: "member" | "editor" | "admin";
+  role: "member" | "editor" | "admin" | "superadmin";
   created_at: string;
 }

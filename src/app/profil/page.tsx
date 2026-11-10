@@ -46,7 +46,13 @@ export default async function ProfilePage() {
           <h1 className="text-2xl font-bold text-slate-900">Perjalanan Saya</h1>
           <p className="mt-1 text-sm text-slate-500">
             {profile?.display_name} · {profile?.email} ·{" "}
-            {profile?.role === "member" ? "Anggota" : profile?.role === "editor" ? "Editor" : "Admin"}
+            {profile?.role === "member"
+              ? "Anggota"
+              : profile?.role === "editor"
+                ? "Editor"
+                : profile?.role === "superadmin"
+                  ? "Super Admin"
+                  : "Admin"}
           </p>
         </div>
         <LogoutButton />

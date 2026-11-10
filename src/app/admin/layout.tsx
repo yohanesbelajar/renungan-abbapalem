@@ -23,7 +23,7 @@ export default async function AdminLayout({
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin" && profile?.role !== "editor") {
+  if (profile?.role !== "admin" && profile?.role !== "editor" && profile?.role !== "superadmin") {
     redirect("/");
   }
 
@@ -45,7 +45,7 @@ export default async function AdminLayout({
           <Link href="/admin/statistik" className="rounded px-2 py-2 hover:bg-slate-100">
             Statistik
           </Link>
-          {profile?.role === "admin" && (
+          {(profile?.role === "admin" || profile?.role === "superadmin") && (
             <Link href="/admin/pengguna" className="rounded px-2 py-2 hover:bg-slate-100">
               Pengguna
             </Link>

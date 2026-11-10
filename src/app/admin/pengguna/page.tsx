@@ -6,6 +6,13 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: me } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null };
+  const canSuper = me?.role === "superadmin";
   const { data: users } = await supabase
     .from("profiles")
     .select("id, email, display_name, role")
@@ -33,7 +40,7 @@ export default async function AdminUsersPage() {
                 <td className="py-2">{u.display_name}</td>
                 <td className="py-2">{u.email}</td>
                 <td className="py-2">
-                  <RoleSelect userId={u.id} role={u.role} />
+                  <RoleSelect userId={u.id} role={u.role} canSuper={canSuper} />
                 </td>
               </tr>
             ))}

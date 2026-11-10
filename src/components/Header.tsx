@@ -15,7 +15,10 @@ export default async function Header() {
       .single();
     profile = data;
   }
-  const isStaff = profile?.role === "admin" || profile?.role === "editor";
+  const isStaff =
+    profile?.role === "admin" ||
+    profile?.role === "editor" ||
+    profile?.role === "superadmin";
 
   return (
     <header className="sticky top-0 z-40 border-b border-garis-tipis bg-cream/80 backdrop-blur-md">
