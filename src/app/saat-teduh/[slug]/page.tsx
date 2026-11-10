@@ -134,7 +134,7 @@ export default async function DevotionPage({
       </div>
 
       {/* Kutipan Alkitab */}
-      {d.verse_text && (
+      {d.verse_text ? (
         <blockquote className="mt-8 rounded-lg border-l-4 border-[#9B3F76] bg-[#FCF5EC] p-4">
           <p className="italic">“{d.verse_text}”</p>
           <p className="mt-2 text-sm font-semibold text-[#9B3F76]">
@@ -142,7 +142,14 @@ export default async function DevotionPage({
           </p>
           <p className="mt-1 text-xs text-slate-500">{LAI_CREDIT}</p>
         </blockquote>
-      )}
+      ) : d.verse_reference ? (
+        <p className="mt-8 rounded-lg border-l-4 border-[#9B3F76] bg-[#FCF5EC] p-4 text-sm font-semibold text-[#9B3F76]">
+          Ayat rujukan: {d.verse_reference}
+          <span className="mt-1 block text-xs font-normal text-slate-500">
+            {LAI_CREDIT}
+          </span>
+        </p>
+      ) : null}
 
       {/* Aksi */}
       <DevotionActions
