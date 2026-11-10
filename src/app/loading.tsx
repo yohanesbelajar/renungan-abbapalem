@@ -9,7 +9,7 @@ export default function Loading() {
       <div className="saat-loading" role="status" aria-live="polite" aria-busy="true">
         <div className="saat-loading-card">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-abbalove.png" alt="Abbalove Ministries" width={200} height={54} />
+          <img src="/logo-palem.png" alt="Abbalove Palem" width={72} height={72} />
         </div>
         <div className="saat-loading-spinner" aria-hidden="true" />
         <p>Memuat halaman…</p>
