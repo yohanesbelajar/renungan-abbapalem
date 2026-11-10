@@ -242,7 +242,7 @@ export default async function DevotionPage({
 
       {/* Kutipan Alkitab (hanya bila ada teks kutipan) */}
       {d.verse_text ? (
-        <blockquote className="mt-8 rounded-lg border-l-4 border-[#0000ff] bg-[#EEF3FB] p-4">
+        <blockquote className="mt-8 max-h-[32rem] overflow-y-auto overscroll-contain rounded-lg border-l-4 border-[#0000ff] bg-[#EEF3FB] p-4">
           <p className="italic">“{d.verse_text}”</p>
           <p className="mt-2 text-sm font-semibold text-[#0000ff]">
             — {d.verse_reference}
