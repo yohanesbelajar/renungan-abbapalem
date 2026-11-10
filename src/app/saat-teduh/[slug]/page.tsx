@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { LAI_CREDIT } from "@/lib/constants";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import DevotionActions from "@/components/DevotionActions";
 import { TeksAyat, TombolRujukan } from "@/components/AyatTeks";
@@ -211,31 +210,15 @@ export default async function DevotionPage({
         Dept. Pengajaran Abbalove Palem
       </p>
 
-      {/* Kutipan Alkitab (rujukan tetap tampil walau kutipan kosong —
-          rujukan yang diklik membuka pop-up berisi teks ayat) */}
-      {d.verse_text ? (
-        <blockquote className="mt-8 max-h-[32rem] overflow-y-auto overscroll-contain rounded-lg border-l-4 border-[#0000ff] bg-[#EEF3FB] p-4">
-          <p className="italic">“{d.verse_text}”</p>
-          <p className="mt-2 text-sm font-semibold text-[#0000ff]">
-            —{" "}
-            {d.verse_reference && (
-              <TombolRujukan
-                rujukan={d.verse_reference}
-                teksCadangan={d.verse_text}
-                className="font-semibold text-[#0000ff] decoration-[#0000ff]/50"
-              />
-            )}
-          </p>
-          <p className="mt-1 text-xs text-slate-500">{LAI_CREDIT}</p>
-        </blockquote>
-      ) : d.verse_reference ? (
+      {/* Rujukan Alkitab saja — teks ayat dibuka lewat pop-up saat rujukan diklik */}
+      {d.verse_reference ? (
         <p className="mt-8 rounded-lg border-l-4 border-[#0000ff] bg-[#EEF3FB] p-4 text-sm font-semibold text-[#0000ff]">
-          Ayat rujukan:{" "}
+          Ayat bacaan:{" "}
           <TombolRujukan
             rujukan={d.verse_reference}
+            teksCadangan={d.verse_text}
             className="font-semibold text-[#0000ff] decoration-[#0000ff]/50"
           />
-          <span className="mt-1 block text-xs font-normal text-slate-500">{LAI_CREDIT}</span>
         </p>
       ) : null}
 
