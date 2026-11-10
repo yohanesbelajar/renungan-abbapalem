@@ -213,16 +213,16 @@ body {
   text-transform: uppercase;
 }
 
-/* Isi pop-up ayat: bilah gulir tipis yang terlihat di panel gelap */
+/* Isi pop-up ayat: bilah gulir tipis pada panel terang */
 .ayat-isi {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+  scrollbar-color: rgba(74, 35, 82, 0.28) transparent;
 }
 .ayat-isi::-webkit-scrollbar {
   width: 6px;
 }
 .ayat-isi::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(74, 35, 82, 0.28);
   border-radius: 9999px;
 }
 .ayat-isi::-webkit-scrollbar-track {

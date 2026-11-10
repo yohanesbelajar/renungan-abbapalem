@@ -118,9 +118,27 @@ function PopupAyat({
   const [ayat, setAyat] = useState<AyatTerpilih[] | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   const [tersalin, setTersalin] = useState(false);
+  const [adaLanjutan, setAdaLanjutan] = useState(false);
   const judul = rujukan ? tampilkanRujukan(rujukan) : (cadangan?.rujukan ?? "Ayat");
   const teksCadangan = !rujukan && cadangan?.teks ? cadangan.teks : null;
   const refPanel = useRef<HTMLDivElement>(null);
+  const refIsi = useRef<HTMLDivElement>(null);
+
+  // Tanda "masih ada ayat di bawah": muncul hanya bila isi benar-benar terpotong
+  useEffect(() => {
+    const el = refIsi.current;
+    if (!el) return;
+    const periksa = () =>
+      setAdaLanjutan(el.scrollHeight - el.scrollTop - el.clientHeight > 8);
+    periksa();
+    el.addEventListener("scroll", periksa, { passive: true });
+    const ro = new ResizeObserver(periksa);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", periksa);
+      ro.disconnect();
+    };
+  }, [ayat, teksCadangan]);
 
   useEffect(() => {
     let batal = false;
@@ -179,7 +197,7 @@ function PopupAyat({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#2b2130]/45 p-4 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) tutup();
       }}
@@ -190,17 +208,19 @@ function PopupAyat({
         role="dialog"
         aria-modal="true"
         aria-label={judul}
-        className="w-full max-w-lg overflow-hidden rounded-2xl bg-[#2B2B2B] shadow-[0_20px_60px_rgba(0,0,0,0.45)] outline-none"
+        className="flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-garis bg-kertas shadow-[0_24px_70px_-20px_rgba(74,35,82,0.45)] outline-none"
       >
-        {/* Kepala ungu: judul kiri, salin + tutup kanan */}
-        <div className="flex items-center justify-between gap-3 bg-[#963296] px-4 py-3">
-          <span className="truncate text-base font-bold text-white">{judul}</span>
+        {/* Kepala terang: judul plum, salin + tutup kanan */}
+        <div className="flex items-center justify-between gap-3 border-b border-garis bg-ungu-lembut px-5 py-3.5">
+          <span className="truncate text-[16px] font-semibold text-plum">
+            {judul}
+          </span>
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
               onClick={salin}
               aria-label="Salin ayat"
-              className="rounded-full p-2 text-white/90 transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+              className="rounded-full p-2 text-plum/70 transition hover:bg-white/70 hover:text-plum focus-visible:outline focus-visible:outline-2 focus-visible:outline-ungu"
             >
               {tersalin ? (
                 <Ikon d="M20 6 9 17l-5-5" className="h-5 w-5" />
@@ -215,27 +235,34 @@ function PopupAyat({
               type="button"
               onClick={tutup}
               aria-label="Tutup"
-              className="rounded-full p-2 text-white/90 transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+              className="rounded-full p-2 text-plum/70 transition hover:bg-white/70 hover:text-plum focus-visible:outline focus-visible:outline-2 focus-visible:outline-ungu"
             >
               <Ikon d="M18 6 6 18M6 6l12 12" className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Isi ayat */}
-        <div className="ayat-isi max-h-[65vh] overflow-y-auto overscroll-contain px-5 py-4 text-[16px] leading-[1.75] text-white">
+        {/* Isi ayat — panel terang, tinta plum */}
+        <div
+          ref={refIsi}
+          className={`ayat-isi min-h-0 flex-1 overflow-y-auto overscroll-contain bg-kertas px-5 pb-8 pt-4 text-[16px] leading-[1.8] text-tinta ${
+            adaLanjutan
+              ? "[mask-image:linear-gradient(to_bottom,#000_90%,transparent_100%)]"
+              : ""
+          }`}
+        >
           {memuat && (
-            <p className="flex items-center gap-3 py-6 text-white/70">
-              <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <p className="flex items-center gap-3 py-6 text-tinta-2">
+              <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-ungu/25 border-t-ungu" />
               Memuat ayat…
             </p>
           )}
           {galat && !teksCadangan && (
-            <p className="py-6 text-white/70">Ayat tidak dapat dimuat: {galat}</p>
+            <p className="py-6 text-tinta-2">Ayat tidak dapat dimuat: {galat}</p>
           )}
           {teksCadangan && (
             <p>
-              <span className="rounded bg-[#E91E63]/30 px-1 py-0.5">{teksCadangan}</span>
+              <span className="rounded bg-ungu-lembut px-1 py-0.5">{teksCadangan}</span>
             </p>
           )}
           {ayat && (
@@ -246,8 +273,14 @@ function PopupAyat({
                 return (
                   <span key={`${a.pasal}:${a.ayat}`}>
                     {i > 0 && " "}
-                    <span className={i === 0 ? "rounded bg-[#E91E63]/30 px-1 py-0.5" : undefined}>
-                      <sup className="mr-0.5 text-[0.7em] text-white/70">{nomor}</sup>
+                    <span
+                      className={
+                        i === 0 ? "rounded bg-ungu-lembut px-1 py-0.5" : undefined
+                      }
+                    >
+                      <sup className="mr-0.5 text-[0.7em] font-semibold text-ungu">
+                        {nomor}
+                      </sup>
                       {a.teks}
                     </span>
                   </span>
@@ -255,7 +288,20 @@ function PopupAyat({
               })}
             </p>
           )}
-          <p className="mt-4 text-xs text-white/50">{LAI_CREDIT}</p>
+        </div>
+
+        {/* Kaki tetap: kredit LAI selalu terlihat walau isi digulir */}
+        <div className="flex items-center justify-between gap-3 border-t border-garis bg-krem-2 px-5 py-2.5">
+          <span className="text-[11px] text-tinta-3">{LAI_CREDIT}</span>
+          {adaLanjutan ? (
+            <span aria-hidden className="shrink-0 text-[11px] font-medium text-ungu">
+              ↓ Gulir untuk lanjut
+            </span>
+          ) : (
+            <span className="hidden shrink-0 text-[11px] text-tinta-3 [@media(hover:hover)]:inline">
+              Esc untuk menutup
+            </span>
+          )}
         </div>
       </div>
     </div>,
