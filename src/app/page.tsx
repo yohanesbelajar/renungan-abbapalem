@@ -5,12 +5,6 @@ import { todayJakarta } from "@/lib/dates";
 import { TAGLINE, SITE_NAME } from "@/lib/constants";
 
 
-const STEPS = [
-  { n: 1, t: "Baca", d: "Buka saat teduh hari ini dan baca isinya dengan tenang." },
-  { n: 2, t: "Renungkan", d: "Pikirkan pertanyaan refleksi yang disediakan." },
-  { n: 3, t: "Terapkan", d: "Jalankan satu langkah nyata dari firman hari ini." },
-];
-
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
@@ -69,46 +63,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Saat Teduh hari ini / terbaru */}
+      {/* Arsip terbaru */}
       <section className="mx-auto max-w-3xl px-4 py-10">
-        {featured ? (
-          <div>
-            <h2 className="text-lg font-semibold text-slate-700">
-              Saat Teduh {featured.devotion_date === today ? "Hari Ini" : "Terbaru"}
-            </h2>
-            <div className="mt-3">
-              <DevotionCardItem d={featured} />
-            </div>
-          </div>
-        ) : (
-          <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">
-            Belum ada saat teduh hari ini. Saat Teduh berikutnya segera hadir —
-            “{TAGLINE}”.
-          </p>
-        )}
-
-        {/* 3 langkah */}
-        <div className="mt-12">
-          <h2 className="text-lg font-semibold text-slate-700">
-            Tiga langkah sederhana
-          </h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            {STEPS.map((s) => (
-              <div
-                key={s.n}
-                className="rounded-lg border border-slate-200 bg-cream p-4"
-              >
-                <p className="text-sm font-bold text-[#9B3F76]">
-                  {s.n}. {s.t}
-                </p>
-                <p className="mt-1 text-sm text-slate-600">{s.d}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Arsip terbaru */}
-        <div className="mt-12">
+        <div>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-700">
               Arsip terbaru
