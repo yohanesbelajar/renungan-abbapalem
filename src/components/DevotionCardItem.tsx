@@ -3,44 +3,68 @@ import { formatTanggalID } from "@/lib/dates";
 import { TombolRujukan } from "@/components/AyatTeks";
 import type { DevotionCard } from "@/lib/types";
 
-export default function DevotionCardItem({ d }: { d: DevotionCard }) {
+export default function DevotionCardItem({
+  d,
+  unggulan = false,
+}: {
+  d: DevotionCard;
+  unggulan?: boolean;
+}) {
   return (
-    <article className="relative rounded-lg border border-slate-200 p-4 transition hover:border-[#9B3F76]/40">
-      <p className="text-xs text-slate-500">{formatTanggalID(d.devotion_date)}</p>
-      {d.theme && (
-        <p className="mt-1">
-          {/* z-10: tetap bisa diklik di atas lapisan kartu (filter tema) */}
+    <article className="kartu kartu-naik relative flex h-full flex-col p-5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="label-kecil text-tinta-3">
+          {formatTanggalID(d.devotion_date)}
+        </p>
+        {d.theme && (
           <Link
             href={`/arsip?tema=${encodeURIComponent(d.theme)}`}
-            className="relative z-10 inline-block rounded-full bg-[#9B3F76] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#7E3160]"
+            className="relative z-10 inline-flex items-center gap-1.5 rounded-full bg-lavender px-2.5 py-1 text-[11.5px] font-semibold tracking-[0.02em] text-ungu-2 transition hover:bg-ungu hover:text-white"
           >
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
             {d.theme}
           </Link>
-        </p>
-      )}
-      <h3 className="mt-1 text-lg font-semibold leading-snug">
-        {/* after:absolute inset-0 membuat seluruh kartu bisa diklik dan langsung
-            membuka isi saat teduh (bukan halaman arsip). */}
+        )}
+      </div>
+
+      <h3
+        className={`judul-rapat-sm mt-3 text-plum ${
+          unggulan ? "text-[22px] sm:text-[26px]" : "text-[18.5px]"
+        }`}
+      >
+        {/* after:absolute inset-0: seluruh kartu membuka isi saat teduh */}
         <Link
           href={`/saat-teduh/${d.slug}`}
-          className="after:absolute after:inset-0 after:content-[''] hover:text-[#9B3F76]"
+          className="line-clamp-3 after:absolute after:inset-0 after:content-[''] transition-colors hover:text-ungu"
         >
           {d.title}
         </Link>
       </h3>
-      {d.verse_reference && (
-        <p className="relative z-10 mt-1 w-fit text-xs font-medium text-[#9B3F76]">
-          Ayat:{" "}
-          <TombolRujukan
-            rujukan={d.verse_reference}
-            className="text-xs font-medium text-[#9B3F76] decoration-[#9B3F76]/50"
-          />
+
+      {d.summary && (
+        <p className="mt-2 line-clamp-2 text-[14.5px] leading-relaxed text-tinta-2">
+          {d.summary}
         </p>
       )}
-      {d.summary && (
-        <p className="mt-1 line-clamp-2 text-sm text-slate-600">{d.summary}</p>
-      )}
-      <p className="mt-2 text-xs text-slate-400">♥ {d.hearts_count}</p>
+
+      <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+        {d.verse_reference ? (
+          <p className="relative z-10 w-fit text-[13px] font-medium text-ungu">
+            <TombolRujukan
+              rujukan={d.verse_reference}
+              className="text-[13px] font-medium text-ungu decoration-ungu/40"
+            />
+          </p>
+        ) : (
+          <span />
+        )}
+        <p className="flex items-center gap-1 text-[12.5px] text-tinta-3">
+          <span aria-hidden className="text-[13px] text-ungu/70">
+            ♥
+          </span>
+          {d.hearts_count}
+        </p>
+      </div>
     </article>
   );
 }

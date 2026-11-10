@@ -118,34 +118,48 @@ export default async function DevotionPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-2xl px-4 py-10 sm:py-14">
       {/* Breadcrumb */}
-      <nav className="text-sm text-slate-500" aria-label="Breadcrumb">
-        <Link href="/" className="hover:text-[#9B3F76]">
+      <nav className="flex items-center gap-2 text-[13px] text-tinta-3" aria-label="Breadcrumb">
+        <Link href="/" className="transition hover:text-ungu">
           Beranda
-        </Link>{" "}
-        › <span>Saat Teduh</span>
+        </Link>
+        <span aria-hidden>›</span>
+        <Link href="/arsip" className="transition hover:text-ungu">
+          Arsip
+        </Link>
       </nav>
 
-      {/* Kepala edisi + penanda tema (kanan atas, abu-abu tipis — seperti PDF) */}
-      <div className="mt-4 flex items-baseline justify-between gap-3 text-xs italic text-[#a6a6a6]">
-        <span>{kepalaEdisi(d.devotion_date)}</span>
-        {d.theme && <span className="text-right uppercase">{d.theme}</span>}
+      {/* Kepala edisi + penanda tema */}
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <span className="label-kecil rounded-full border border-garis bg-kertas px-2.5 py-1 text-tinta-2 shadow-[0_1px_2px_rgba(31,27,24,0.04)]">
+          {kepalaEdisi(d.devotion_date)}
+        </span>
+        {d.theme && (
+          <Link
+            href={`/arsip?tema=${encodeURIComponent(d.theme)}`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-lavender px-2.5 py-1 text-[11.5px] font-semibold tracking-[0.02em] text-ungu-2 transition hover:bg-ungu hover:text-white"
+          >
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+            {d.theme}
+          </Link>
+        )}
       </div>
 
-      {/* Banner ungu: tanggal kiri, judul kanan */}
-      <div className="mt-2 rounded-lg bg-[#963296] px-4 py-3 text-white sm:px-6 sm:py-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <span className="text-sm font-bold sm:text-base">{tanggalPanjang(d.devotion_date)}</span>
-          <h1 className="text-lg font-bold italic uppercase sm:text-right sm:text-xl">
-            {d.title}
-          </h1>
-        </div>
-      </div>
+      {/* Judul — tipografi rapat, bukan banner blok */}
+      <h1 className="judul-rapat mt-5 text-[30px] text-plum sm:text-[40px]">
+        {d.title}
+      </h1>
+      <p className="mt-3 text-[14.5px] text-tinta-2">
+        {tanggalPanjang(d.devotion_date)}
+        {d.author ? ` · ${d.author}` : ""}
+      </p>
+
+      <div className="mt-6 h-px w-full bg-garis" />
 
       {/* Isi: instruksi (rujukan biru tebal), blok pertanyaan tebal + garis,
           label Pengajar/Pengajaran berwarna, paragraf badan bergaya inline */}
-      <div className="mt-6 space-y-4 text-[17px] leading-relaxed text-[#121212]">
+      <div className="isi-teduh mt-8 space-y-4 text-[17.5px] leading-[1.85] text-[#121212]">
         {(() => {
           const blok: { jenis: string; teks: string }[] = [];
           for (const raw of d.body.split(/\n{2,}/)) {
@@ -168,13 +182,13 @@ export default async function DevotionPage({
                     <TeksAyat
                       teks={rujuk}
                       kunci={`r${i}`}
-                      className="text-lg font-bold text-[#0000ff]"
+                      className="text-[19px] font-bold tracking-tight text-[#0000ff]"
                     />
                   )}
                   <TeksAyat
                     teks={b.teks.slice(idx)}
                     kunci={`s${i}`}
-                    className="text-slate-800"
+                    className="text-tinta-2"
                   />
                 </div>
               );
@@ -182,9 +196,9 @@ export default async function DevotionPage({
             if (b.jenis === "pertanyaan") {
               const akhirPertanyaan = !berikut || berikut.jenis !== "pertanyaan";
               return (
-                <div key={i}>
-                  <TeksAyat teks={b.teks} kunci={`q${i}`} className="font-bold text-slate-900" />
-                  {akhirPertanyaan && <hr className="mt-4 border-slate-300" />}
+                <div key={i} className="rounded-lg bg-krem-2 px-4 py-3">
+                  <TeksAyat teks={b.teks} kunci={`q${i}`} className="font-bold text-tinta" />
+                  {akhirPertanyaan && <hr className="mt-4 border-garis" />}
                 </div>
               );
             }
@@ -193,10 +207,10 @@ export default async function DevotionPage({
               return (
                 <p
                   key={i}
-                  className="pt-2 font-bold italic"
-                  style={{ color: merah ? "#ff0000" : "#0000ff" }}
+                  className="pt-3 text-[13px] font-bold uppercase tracking-[0.08em]"
+                  style={{ color: merah ? "#c0121a" : "#1a34c8" }}
                 >
-                  {b.teks}
+                  {b.teks.replace(/:$/, "")}
                 </p>
               );
             }
@@ -206,13 +220,13 @@ export default async function DevotionPage({
       </div>
 
       {/* Kaki halaman seperti PDF */}
-      <p className="mt-8 text-center text-xs italic text-[#a6a6a6]">
+      <p className="mt-10 text-center text-[12px] italic text-[#a6a6a6]">
         Dept. Pengajaran Abbalove Palem
       </p>
 
       {/* Rujukan Alkitab saja — teks ayat dibuka lewat pop-up saat rujukan diklik */}
       {d.verse_reference ? (
-        <p className="mt-8 rounded-lg border-l-4 border-[#0000ff] bg-[#EEF3FB] p-4 text-sm font-semibold text-[#0000ff]">
+        <p className="mt-8 rounded-xl border border-garis border-l-[3px] border-l-[#0000ff] bg-[#EEF3FB] px-4 py-3.5 text-[14.5px] font-semibold text-[#0000ff]">
           Ayat bacaan:{" "}
           <TombolRujukan
             rujukan={d.verse_reference}
@@ -232,17 +246,29 @@ export default async function DevotionPage({
       />
 
       {/* Navigasi sebelum/berikutnya */}
-      <nav className="mt-10 flex justify-between gap-3 text-sm">
+      <nav className="mt-12 grid gap-3 border-t border-garis pt-6 text-[14px] sm:grid-cols-2">
         {prev ? (
-          <Link href={`/saat-teduh/${prev.slug}`} className="hover:text-[#9B3F76]">
-            ← Sebelumnya: {prev.title}
+          <Link
+            href={`/saat-teduh/${prev.slug}`}
+            className="group rounded-xl border border-garis bg-kertas p-4 shadow-[0_1px_2px_rgba(31,27,24,0.04)] transition hover:border-ungu/35"
+          >
+            <span className="label-kecil text-tinta-3">← Sebelumnya</span>
+            <span className="mt-1.5 block font-semibold leading-snug text-tinta transition group-hover:text-ungu">
+              {prev.title}
+            </span>
           </Link>
         ) : (
           <span />
         )}
         {next ? (
-          <Link href={`/saat-teduh/${next.slug}`} className="hover:text-[#9B3F76]">
-            Berikutnya: {next.title} →
+          <Link
+            href={`/saat-teduh/${next.slug}`}
+            className="group rounded-xl border border-garis bg-kertas p-4 text-right shadow-[0_1px_2px_rgba(31,27,24,0.04)] transition hover:border-ungu/35"
+          >
+            <span className="label-kecil text-tinta-3">Berikutnya →</span>
+            <span className="mt-1.5 block font-semibold leading-snug text-tinta transition group-hover:text-ungu">
+              {next.title}
+            </span>
           </Link>
         ) : (
           <span />
@@ -251,11 +277,16 @@ export default async function DevotionPage({
 
       {/* Terkait */}
       {related && related.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-lg font-semibold text-slate-700">
-            Saat Teduh terkait
-          </h2>
-          <div className="mt-3 grid gap-3">
+        <section className="mt-12">
+          <div className="flex items-end justify-between gap-3">
+            <h2 className="judul-rapat-sm text-[20px] text-tinta">
+              Saat teduh terkait
+            </h2>
+            <Link href="/arsip" className="text-[13.5px] font-semibold text-ungu hover:underline">
+              Semua arsip
+            </Link>
+          </div>
+          <div className="mt-4 grid gap-4">
             {related.map((r: DevotionCard) => (
               <DevotionCardItem key={r.slug} d={r} />
             ))}

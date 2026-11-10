@@ -87,40 +87,33 @@ export default function DevotionActions({
   }
 
   return (
-    <div className="mt-8 flex flex-wrap items-center gap-3">
+    <div className="mt-8 flex flex-wrap items-center gap-2.5">
       <button
         onClick={toggleHeart}
         disabled={busy}
         aria-pressed={hearted}
-        className={`flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
-          hearted
-            ? "border-red-400 bg-red-50 text-red-600"
-            : "border-slate-300 text-slate-700 hover:border-red-300"
+        className={`btn btn-sm ${
+          hearted ? "btn-senja" : "btn-halus"
         }`}
       >
         <span aria-hidden>♥</span>
         <span>{hearted ? "Batalkan heart" : "Berikan heart"}</span>
-        <span className="text-xs">({count})</span>
+        <span className="text-[12px] opacity-70">({count})</span>
       </button>
 
       <button
         onClick={toggleCompleted}
         disabled={busy}
         aria-pressed={completed}
-        className={`flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
-          completed
-            ? "border-green-500 bg-green-50 text-green-700"
-            : "border-slate-300 text-slate-700 hover:border-green-400"
+        className={`btn btn-sm ${
+          completed ? "btn-utama" : "btn-halus"
         }`}
       >
         <span aria-hidden>✓</span>
         <span>{completed ? "Selesai dibaca" : "Tandai selesai membaca"}</span>
       </button>
 
-      <button
-        onClick={share}
-        className="flex min-h-11 items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:border-[#9B3F76]"
-      >
+      <button onClick={share} className="btn btn-sm btn-halus">
         <span aria-hidden>↗</span>
         <span>{copied ? "Tautan tersalin!" : "Bagikan"}</span>
       </button>

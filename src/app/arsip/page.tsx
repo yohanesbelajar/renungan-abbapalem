@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
+import { IkonCari } from "@/components/Ikon";
 import { DevotionCard } from "@/lib/types";
 
 
@@ -127,41 +128,48 @@ export default async function ArchivePage({
   const adaFilter = !!(sp.bulan || sp.tema || sp.cari);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-slate-900">Arsip Saat Teduh</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Cari berdasarkan topik atau ayat — mis. “jiwa” atau “Matius 9”.
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
+      {/* Kepala halaman */}
+      <p className="label-kecil text-ungu">Arsip</p>
+      <h1 className="judul-rapat-sm mt-2 text-[32px] text-plum sm:text-[40px]">
+        Semua saat teduh
+      </h1>
+      <p className="mt-2 max-w-xl text-[15.5px] leading-relaxed text-tinta-2">
+        Cari berdasarkan topik atau ayat — mis. “jiwa” atau “Matius 9” — atau
+        telusuri menurut bulan dan tema.
       </p>
 
       {/* Pencarian topik / ayat */}
-      <form
-        method="GET"
-        action="/arsip"
-        className="mt-4 flex flex-wrap gap-2"
-      >
-        <input
-          type="search"
-          name="cari"
-          defaultValue={sp.cari ?? ""}
-          placeholder="Cari topik atau ayat… (jiwa, Matius 9)"
-          className="min-h-11 min-w-0 flex-1 rounded border border-slate-300 bg-cream px-3 py-2 text-sm"
-          aria-label="Cari topik atau ayat"
-        />
-        <button
-          type="submit"
-          className="min-h-11 rounded-full bg-[#9B3F76] px-5 py-2 text-sm text-white"
-        >
+      <form method="GET" action="/arsip" className="mt-7 flex gap-2">
+          <div className="relative flex-1">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-tinta-2"
+          >
+            <IkonCari className="h-[18px] w-[18px]" />
+          </span>
+          <input
+            type="search"
+            name="cari"
+            defaultValue={sp.cari ?? ""}
+            placeholder="Cari topik atau ayat…"
+            className="min-h-12 w-full rounded-full border border-garis bg-kertas pl-11 pr-4 py-3 text-[15px] text-tinta shadow-kartu placeholder:text-tinta-3 focus:border-ungu/50 focus:outline-none"
+            aria-label="Cari topik atau ayat"
+          />
+        </div>
+        <button type="submit" className="btn btn-utama shrink-0 px-5">
+          <IkonCari className="h-4 w-4" />
           Cari
         </button>
       </form>
 
       {/* Filter bulan & tema */}
-      <form method="GET" action="/arsip" className="mt-2 flex flex-wrap gap-2">
+      <form method="GET" action="/arsip" className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
         {sp.cari && <input type="hidden" name="cari" value={sp.cari} />}
         <select
           name="bulan"
           defaultValue={sp.bulan ?? ""}
-          className="min-h-11 rounded border border-slate-300 bg-cream px-3 py-2 text-sm"
+          className="min-h-11 flex-1 rounded-xl border border-garis bg-kertas px-3 py-2 text-[14px] text-tinta shadow-[0_1px_2px_rgba(31,27,24,0.04)] focus:border-ungu/50 focus:outline-none"
           aria-label="Bulan"
         >
           <option value="">Semua bulan</option>
@@ -176,7 +184,7 @@ export default async function ArchivePage({
         <select
           name="tema"
           defaultValue={sp.tema ?? ""}
-          className="min-h-11 rounded border border-slate-300 bg-cream px-3 py-2 text-sm"
+          className="min-h-11 flex-1 rounded-xl border border-garis bg-kertas px-3 py-2 text-[14px] text-tinta shadow-[0_1px_2px_rgba(31,27,24,0.04)] focus:border-ungu/50 focus:outline-none"
           aria-label="Tema"
         >
           <option value="">Semua tema</option>
@@ -186,16 +194,13 @@ export default async function ArchivePage({
             </option>
           ))}
         </select>
-        <button
-          type="submit"
-          className="min-h-11 rounded-full border border-[#9B3F76] px-4 py-2 text-sm text-[#9B3F76]"
-        >
+        <button type="submit" className="btn btn-halus shrink-0 px-4">
           Tampilkan
         </button>
         {adaFilter && (
           <Link
             href="/arsip"
-            className="flex min-h-11 items-center rounded-full border border-slate-300 px-4 py-2 text-sm"
+            className="flex min-h-11 items-center rounded-xl px-3 py-2 text-[14px] font-medium text-tinta-3 transition hover:text-ungu"
           >
             Reset
           </Link>
@@ -204,19 +209,24 @@ export default async function ArchivePage({
 
       {/* Topik bulanan menonjol */}
       {!sp.bulan && topikBulanan.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Topik tiap bulan
-          </h2>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <section className="mt-9">
+          <h2 className="label-kecil text-tinta-3">Topik tiap bulan</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
             {topikBulanan.map(([ym, v]) => (
               <Link
                 key={ym}
                 href={`/arsip?bulan=${ym}`}
-                className="rounded-full border border-[#9B3F76]/30 bg-[#FCF5EC] px-3 py-1.5 text-sm font-medium text-[#9B3F76] hover:bg-[#F6E9D8]"
+                className="group inline-flex items-center gap-2 rounded-full border border-garis bg-kertas py-1.5 pl-3 pr-3.5 text-[13.5px] shadow-[0_1px_2px_rgba(31,27,24,0.04)] transition hover:border-ungu/35 hover:bg-ungu-lembut"
               >
-                {v.label}
-                {v.theme ? ` — ${v.theme}` : ""}
+                <span className="font-semibold text-tinta">{v.label}</span>
+                {v.theme && (
+                  <>
+                    <span aria-hidden className="text-tinta-3">·</span>
+                    <span className="font-semibold text-ungu transition group-hover:text-ungu-tua">
+                      {v.theme}
+                    </span>
+                  </>
+                )}
               </Link>
             ))}
           </div>
@@ -224,21 +234,27 @@ export default async function ArchivePage({
       )}
 
       {/* Hasil, dikelompokkan per bulan dengan tema bulan */}
-      <div className="mt-6 space-y-6">
+      <div className="mt-10 space-y-10">
         {grup.map((g) => (
           <section key={g.ym}>
-            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-2">
-              <h2 className="text-base font-bold text-slate-800">{g.label}</h2>
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-garis pb-3">
+              <div>
+                <h2 className="judul-rapat-sm text-[20px] text-plum">{g.label}</h2>
+                <p className="mt-1 text-[12.5px] text-tinta-3">
+                  {g.items.length} edisi
+                </p>
+              </div>
               {g.theme && (
                 <Link
                   href={`/arsip?tema=${encodeURIComponent(g.theme)}`}
-                  className="rounded-full bg-[#9B3F76] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#7E3160]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-lavender px-3 py-1.5 text-[12px] font-semibold tracking-[0.02em] text-ungu-2 transition hover:bg-ungu hover:text-white"
                 >
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
                   Tema bulan: {g.theme}
                 </Link>
               )}
             </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {g.items.map((d) => (
                 <DevotionCardItem key={d.slug} d={d} />
               ))}
@@ -248,7 +264,7 @@ export default async function ArchivePage({
       </div>
 
       {(!devotions || devotions.length === 0) && (
-        <p className="mt-6 rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">
+        <p className="kartu mt-8 border-dashed p-10 text-center text-[15px] text-tinta-2">
           Tidak ada saat teduh yang cocok
           {cari ? ` dengan kata “${cari}”` : " dengan filter ini"}.
         </p>
