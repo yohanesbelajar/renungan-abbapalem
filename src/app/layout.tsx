@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import "@/components/loading.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SITE_NAME } from "@/lib/constants";
@@ -23,6 +24,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" className={`${geistSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-cream text-slate-800">
+        {/* Splash pembuka — HTML murni + CSS, hilang sendiri walau JS gagal */}
+        <div className="splash" aria-hidden="true">
+          <div className="splash-inner">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-abbalove.png"
+              alt=""
+              width={200}
+              height={54}
+              className="splash-logo"
+              fetchPriority="high"
+            />
+            <div className="splash-bar">
+              <span />
+            </div>
+            <p className="splash-text">Saat Teduh · Abbalove Palem</p>
+          </div>
+        </div>
+
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
