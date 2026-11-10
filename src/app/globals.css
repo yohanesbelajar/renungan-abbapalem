@@ -1,15 +1,19 @@
 @import "tailwindcss";
 
+@theme {
+  --color-cream: #FDF9F3;
+}
+
 @theme inline {
-  --color-brand: #2B4F8F;
-  --color-brand-soft: #EEF3FB;
+  --color-brand: #A1177C;
+  --color-brand-soft: #FCF5EC;
   --color-accent: #B4433E;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: #ffffff;
+  background: #FDF9F3;
   color: #1f2937;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   font-size: 17px;

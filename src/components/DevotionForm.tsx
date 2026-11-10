@@ -226,7 +226,7 @@ export default function DevotionForm({
           type="button"
           disabled={busy}
           onClick={() => save("published")}
-          className="rounded-full bg-[#2B4F8F] px-5 py-2.5 text-sm text-white disabled:opacity-60"
+          className="rounded-full bg-[#A1177C] px-5 py-2.5 text-sm text-white disabled:opacity-60"
         >
           Terbitkan Sekarang
         </button>
@@ -242,7 +242,7 @@ export default function DevotionForm({
             type="button"
             disabled={busy}
             onClick={() => save("scheduled", scheduleAt)}
-            className="rounded-full border border-[#2B4F8F] px-4 py-2 text-sm text-[#2B4F8F] disabled:opacity-60"
+            className="rounded-full border border-[#A1177C] px-4 py-2 text-sm text-[#A1177C] disabled:opacity-60"
           >
             Jadwalkan
           </button>

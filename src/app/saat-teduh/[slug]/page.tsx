@@ -109,7 +109,7 @@ export default async function DevotionPage({
     <div className="mx-auto max-w-2xl px-4 py-8">
       {/* Breadcrumb */}
       <nav className="text-sm text-slate-500" aria-label="Breadcrumb">
-        <Link href="/" className="hover:text-[#2B4F8F]">
+        <Link href="/" className="hover:text-[#A1177C]">
           Beranda
         </Link>{" "}
         › <span>Saat Teduh</span>
@@ -135,9 +135,9 @@ export default async function DevotionPage({
 
       {/* Kutipan Alkitab */}
       {d.verse_text && (
-        <blockquote className="mt-8 rounded-lg border-l-4 border-[#2B4F8F] bg-[#EEF3FB] p-4">
+        <blockquote className="mt-8 rounded-lg border-l-4 border-[#A1177C] bg-[#FCF5EC] p-4">
           <p className="italic">“{d.verse_text}”</p>
-          <p className="mt-2 text-sm font-semibold text-[#2B4F8F]">
+          <p className="mt-2 text-sm font-semibold text-[#A1177C]">
             — {d.verse_reference}
           </p>
           <p className="mt-1 text-xs text-slate-500">{LAI_CREDIT}</p>
@@ -156,14 +156,14 @@ export default async function DevotionPage({
       {/* Navigasi sebelum/berikutnya */}
       <nav className="mt-10 flex justify-between gap-3 text-sm">
         {prev ? (
-          <Link href={`/saat-teduh/${prev.slug}`} className="hover:text-[#2B4F8F]">
+          <Link href={`/saat-teduh/${prev.slug}`} className="hover:text-[#A1177C]">
             ← Sebelumnya: {prev.title}
           </Link>
         ) : (
           <span />
         )}
         {next ? (
-          <Link href={`/saat-teduh/${next.slug}`} className="hover:text-[#2B4F8F]">
+          <Link href={`/saat-teduh/${next.slug}`} className="hover:text-[#A1177C]">
             Berikutnya: {next.title} →
           </Link>
         ) : (

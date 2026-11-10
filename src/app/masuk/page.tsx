@@ -96,14 +96,14 @@ function LoginInner() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-full bg-[#2B4F8F] py-3 text-white disabled:opacity-60"
+          className="w-full rounded-full bg-[#A1177C] py-3 text-white disabled:opacity-60"
         >
           {busy ? "Memproses..." : "Masuk"}
         </button>
       </form>
       <p className="mt-4 text-center text-sm">
         Belum punya akun?{" "}
-        <Link href="/daftar" className="text-[#2B4F8F] hover:underline">
+        <Link href="/daftar" className="text-[#A1177C] hover:underline">
           Daftar
         </Link>
       </p>
@@ -118,7 +118,7 @@ function LoginInner() {
             if (error) setError(error.message);
             else setInfo("Tautan reset kata sandi telah dikirim ke email Anda.");
           }}
-          className="text-slate-500 hover:text-[#2B4F8F] hover:underline"
+          className="text-slate-500 hover:text-[#A1177C] hover:underline"
         >
           Lupa kata sandi?
         </button>

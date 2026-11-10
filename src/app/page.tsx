@@ -48,10 +48,10 @@ export default async function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-[#EEF3FB] px-4 py-14 text-center">
+      <section className="bg-[#FCF5EC] px-4 py-14 text-center">
         <div className="mx-auto max-w-2xl">
           <p className="text-sm text-slate-500">{SITE_NAME}</p>
-          <h1 className="mt-2 text-2xl font-bold text-[#2B4F8F] sm:text-3xl">
+          <h1 className="mt-2 text-2xl font-bold text-[#A1177C] sm:text-3xl">
             “{TAGLINE}”
           </h1>
           <p className="mt-3 text-slate-600">
@@ -61,7 +61,7 @@ export default async function HomePage() {
           {featured && (
             <Link
               href={`/saat-teduh/${featured.slug}`}
-              className="mt-6 inline-block rounded-full bg-[#2B4F8F] px-6 py-3 text-white transition hover:bg-[#22406f]"
+              className="mt-6 inline-block rounded-full bg-[#A1177C] px-6 py-3 text-white transition hover:bg-[#87145F]"
             >
               Baca Saat Teduh Hari Ini
             </Link>
@@ -96,9 +96,9 @@ export default async function HomePage() {
             {STEPS.map((s) => (
               <div
                 key={s.n}
-                className="rounded-lg border border-slate-200 bg-white p-4"
+                className="rounded-lg border border-slate-200 bg-cream p-4"
               >
-                <p className="text-sm font-bold text-[#2B4F8F]">
+                <p className="text-sm font-bold text-[#A1177C]">
                   {s.n}. {s.t}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">{s.d}</p>
@@ -113,7 +113,7 @@ export default async function HomePage() {
             <h2 className="text-lg font-semibold text-slate-700">
               Arsip terbaru
             </h2>
-            <Link href="/arsip" className="text-sm text-[#2B4F8F] hover:underline">
+            <Link href="/arsip" className="text-sm text-[#A1177C] hover:underline">
               Lihat semua
             </Link>
           </div>

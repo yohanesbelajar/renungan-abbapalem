@@ -11,10 +11,10 @@ export default function Footer() {
         Alkitab dikutip dari ALKITAB (TB) © LAI 1974.
       </p>
       <div className="mt-3 flex justify-center gap-4">
-        <Link href="/arsip" className="hover:text-[#2B4F8F]">
+        <Link href="/arsip" className="hover:text-[#A1177C]">
           Arsip
         </Link>
-        <Link href="/tentang" className="hover:text-[#2B4F8F]">
+        <Link href="/tentang" className="hover:text-[#A1177C]">
           Tentang
         </Link>
       </div>

@@ -144,12 +144,12 @@ export default async function ArchivePage({
           name="cari"
           defaultValue={sp.cari ?? ""}
           placeholder="Cari topik atau ayat… (jiwa, Matius 9)"
-          className="min-h-11 min-w-0 flex-1 rounded border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="min-h-11 min-w-0 flex-1 rounded border border-slate-300 bg-cream px-3 py-2 text-sm"
           aria-label="Cari topik atau ayat"
         />
         <button
           type="submit"
-          className="min-h-11 rounded-full bg-[#2B4F8F] px-5 py-2 text-sm text-white"
+          className="min-h-11 rounded-full bg-[#A1177C] px-5 py-2 text-sm text-white"
         >
           Cari
         </button>
@@ -161,7 +161,7 @@ export default async function ArchivePage({
         <select
           name="bulan"
           defaultValue={sp.bulan ?? ""}
-          className="min-h-11 rounded border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="min-h-11 rounded border border-slate-300 bg-cream px-3 py-2 text-sm"
           aria-label="Bulan"
         >
           <option value="">Semua bulan</option>
@@ -176,7 +176,7 @@ export default async function ArchivePage({
         <select
           name="tema"
           defaultValue={sp.tema ?? ""}
-          className="min-h-11 rounded border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="min-h-11 rounded border border-slate-300 bg-cream px-3 py-2 text-sm"
           aria-label="Tema"
         >
           <option value="">Semua tema</option>
@@ -188,7 +188,7 @@ export default async function ArchivePage({
         </select>
         <button
           type="submit"
-          className="min-h-11 rounded-full border border-[#2B4F8F] px-4 py-2 text-sm text-[#2B4F8F]"
+          className="min-h-11 rounded-full border border-[#A1177C] px-4 py-2 text-sm text-[#A1177C]"
         >
           Tampilkan
         </button>
@@ -213,7 +213,7 @@ export default async function ArchivePage({
               <Link
                 key={ym}
                 href={`/arsip?bulan=${ym}`}
-                className="rounded-full border border-[#2B4F8F]/30 bg-[#EEF3FB] px-3 py-1.5 text-sm font-medium text-[#2B4F8F] hover:bg-[#DCE7F8]"
+                className="rounded-full border border-[#A1177C]/30 bg-[#FCF5EC] px-3 py-1.5 text-sm font-medium text-[#A1177C] hover:bg-[#F6E9D8]"
               >
                 {v.label}
                 {v.theme ? ` — ${v.theme}` : ""}
@@ -232,7 +232,7 @@ export default async function ArchivePage({
               {g.theme && (
                 <Link
                   href={`/arsip?tema=${encodeURIComponent(g.theme)}`}
-                  className="rounded-full bg-[#2B4F8F] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#22406f]"
+                  className="rounded-full bg-[#A1177C] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#87145F]"
                 >
                   Tema bulan: {g.theme}
                 </Link>

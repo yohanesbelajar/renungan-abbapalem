@@ -36,7 +36,7 @@ export default function GoogleButton({ next = "/" }: { next?: string }) {
         type="button"
         onClick={onClick}
         disabled={busy}
-        className="flex w-full items-center justify-center gap-3 rounded border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-3 rounded border border-slate-300 bg-cream px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
       >
         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
           <path

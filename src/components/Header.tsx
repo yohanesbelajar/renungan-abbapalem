@@ -18,9 +18,9 @@ export default async function Header() {
   const isStaff = profile?.role === "admin" || profile?.role === "editor";
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="border-b border-slate-200 bg-cream">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="text-base font-bold text-[#2B4F8F] sm:text-lg">
+        <Link href="/" className="text-base font-bold text-[#A1177C] sm:text-lg">
           Abbalove Palem <span className="hidden sm:inline">— Saat Teduh</span>
         </Link>
         <nav className="flex items-center gap-2 text-sm sm:gap-4">
@@ -38,14 +38,14 @@ export default async function Header() {
           {user ? (
             <Link
               href="/profil"
-              className="rounded-full bg-[#2B4F8F] px-3 py-2 text-white"
+              className="rounded-full bg-[#A1177C] px-3 py-2 text-white"
             >
               Profil
             </Link>
           ) : (
             <Link
               href="/masuk"
-              className="rounded-full bg-[#2B4F8F] px-3 py-2 text-white"
+              className="rounded-full bg-[#A1177C] px-3 py-2 text-white"
             >
               Masuk
             </Link>
