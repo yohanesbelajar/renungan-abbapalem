@@ -51,7 +51,7 @@ export default async function HomePage() {
       <section className="bg-[#FCF5EC] px-4 py-14 text-center">
         <div className="mx-auto max-w-2xl">
           <p className="text-sm text-slate-500">{SITE_NAME}</p>
-          <h1 className="mt-2 text-2xl font-bold text-[#A1177C] sm:text-3xl">
+          <h1 className="mt-2 text-2xl font-bold text-[#9B3F76] sm:text-3xl">
             “{TAGLINE}”
           </h1>
           <p className="mt-3 text-slate-600">
@@ -61,7 +61,7 @@ export default async function HomePage() {
           {featured && (
             <Link
               href={`/saat-teduh/${featured.slug}`}
-              className="mt-6 inline-block rounded-full bg-[#A1177C] px-6 py-3 text-white transition hover:bg-[#87145F]"
+              className="mt-6 inline-block rounded-full bg-[#9B3F76] px-6 py-3 text-white transition hover:bg-[#7E3160]"
             >
               Baca Saat Teduh Hari Ini
             </Link>
@@ -98,7 +98,7 @@ export default async function HomePage() {
                 key={s.n}
                 className="rounded-lg border border-slate-200 bg-cream p-4"
               >
-                <p className="text-sm font-bold text-[#A1177C]">
+                <p className="text-sm font-bold text-[#9B3F76]">
                   {s.n}. {s.t}
                 </p>
                 <p className="mt-1 text-sm text-slate-600">{s.d}</p>
@@ -113,7 +113,7 @@ export default async function HomePage() {
             <h2 className="text-lg font-semibold text-slate-700">
               Arsip terbaru
             </h2>
-            <Link href="/arsip" className="text-sm text-[#A1177C] hover:underline">
+            <Link href="/arsip" className="text-sm text-[#9B3F76] hover:underline">
               Lihat semua
             </Link>
           </div>

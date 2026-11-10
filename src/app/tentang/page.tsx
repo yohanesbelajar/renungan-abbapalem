@@ -11,7 +11,7 @@ export default function AboutPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="text-2xl font-bold text-slate-900">Tentang</h1>
-      <p className="mt-4 font-semibold text-[#A1177C]">{SITE_NAME}</p>
+      <p className="mt-4 font-semibold text-[#9B3F76]">{SITE_NAME}</p>
       <p className="mt-2">
         Website ini adalah bagian dari keluarga besar Abbalove Ministries,
         berfokus pada pelayanan dan kehidupan rohani jemaat Abbalove Palem.

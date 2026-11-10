@@ -45,7 +45,7 @@ export default async function AdminDashboard() {
             </p>
             <Link
               href={`/admin/saat-teduh/${todayDevotion.slug}`}
-              className="text-sm text-[#A1177C] hover:underline"
+              className="text-sm text-[#9B3F76] hover:underline"
             >
               Edit
             </Link>
@@ -55,7 +55,7 @@ export default async function AdminDashboard() {
             <p className="text-slate-600">Belum ada saat teduh untuk hari ini.</p>
             <Link
               href="/admin/saat-teduh/baru"
-              className="rounded-full bg-[#A1177C] px-4 py-2 text-sm text-white"
+              className="rounded-full bg-[#9B3F76] px-4 py-2 text-sm text-white"
             >
               Tulis Saat Teduh
             </Link>
@@ -73,7 +73,7 @@ export default async function AdminDashboard() {
                   <span className="truncate">{d.title}</span>
                   <Link
                     href={`/admin/saat-teduh/${d.title}`}
-                    className="shrink-0 text-[#A1177C] hover:underline"
+                    className="shrink-0 text-[#9B3F76] hover:underline"
                   >
                     Edit
                   </Link>

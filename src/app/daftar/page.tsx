@@ -68,7 +68,7 @@ export default function RegisterPage() {
         <p className="mt-4 text-sm text-slate-500">
           Tidak menerima email? Periksa folder spam, atau{" "}
           <button
-            className="text-[#A1177C] underline"
+            className="text-[#9B3F76] underline"
             onClick={async () => {
               const { error } = await supabase.auth.resend({
                 type: "signup",
@@ -82,7 +82,7 @@ export default function RegisterPage() {
           </button>
           .
         </p>
-        <Link href="/masuk" className="mt-6 inline-block text-[#A1177C] hover:underline">
+        <Link href="/masuk" className="mt-6 inline-block text-[#9B3F76] hover:underline">
           Ke halaman masuk
         </Link>
       </div>
@@ -163,14 +163,14 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-full bg-[#A1177C] py-3 text-white disabled:opacity-60"
+          className="w-full rounded-full bg-[#9B3F76] py-3 text-white disabled:opacity-60"
         >
           {busy ? "Memproses..." : "Daftar"}
         </button>
       </form>
       <p className="mt-4 text-center text-sm">
         Sudah punya akun?{" "}
-        <Link href="/masuk" className="text-[#A1177C] hover:underline">
+        <Link href="/masuk" className="text-[#9B3F76] hover:underline">
           Masuk
         </Link>
       </p>

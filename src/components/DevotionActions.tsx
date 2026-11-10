@@ -119,7 +119,7 @@ export default function DevotionActions({
 
       <button
         onClick={share}
-        className="flex min-h-11 items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:border-[#A1177C]"
+        className="flex min-h-11 items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:border-[#9B3F76]"
       >
         <span aria-hidden>↗</span>
         <span>{copied ? "Tautan tersalin!" : "Bagikan"}</span>

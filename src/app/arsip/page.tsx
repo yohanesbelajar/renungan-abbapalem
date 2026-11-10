@@ -149,7 +149,7 @@ export default async function ArchivePage({
         />
         <button
           type="submit"
-          className="min-h-11 rounded-full bg-[#A1177C] px-5 py-2 text-sm text-white"
+          className="min-h-11 rounded-full bg-[#9B3F76] px-5 py-2 text-sm text-white"
         >
           Cari
         </button>
@@ -188,7 +188,7 @@ export default async function ArchivePage({
         </select>
         <button
           type="submit"
-          className="min-h-11 rounded-full border border-[#A1177C] px-4 py-2 text-sm text-[#A1177C]"
+          className="min-h-11 rounded-full border border-[#9B3F76] px-4 py-2 text-sm text-[#9B3F76]"
         >
           Tampilkan
         </button>
@@ -213,7 +213,7 @@ export default async function ArchivePage({
               <Link
                 key={ym}
                 href={`/arsip?bulan=${ym}`}
-                className="rounded-full border border-[#A1177C]/30 bg-[#FCF5EC] px-3 py-1.5 text-sm font-medium text-[#A1177C] hover:bg-[#F6E9D8]"
+                className="rounded-full border border-[#9B3F76]/30 bg-[#FCF5EC] px-3 py-1.5 text-sm font-medium text-[#9B3F76] hover:bg-[#F6E9D8]"
               >
                 {v.label}
                 {v.theme ? ` — ${v.theme}` : ""}
@@ -232,7 +232,7 @@ export default async function ArchivePage({
               {g.theme && (
                 <Link
                   href={`/arsip?tema=${encodeURIComponent(g.theme)}`}
-                  className="rounded-full bg-[#A1177C] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#87145F]"
+                  className="rounded-full bg-[#9B3F76] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#7E3160]"
                 >
                   Tema bulan: {g.theme}
                 </Link>
