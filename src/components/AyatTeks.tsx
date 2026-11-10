@@ -106,7 +106,7 @@ function Ikon({ d, ...p }: { d: string } & React.SVGProps<SVGSVGElement>) {
 
 // ---- Pop-up ayat ----
 
-function PopupAyat({
+export function PopupAyat({
   rujukan,
   cadangan,
   tutup,

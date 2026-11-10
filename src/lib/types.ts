@@ -7,12 +7,9 @@ export interface Devotion {
   title: string;
   summary: string;
   body: string;
-  verse_reference: string;
-  verse_text: string;
   theme: string | null;
   author: string | null;
   status: DevotionStatus;
-  featured_image_url: string | null;
   scheduled_at: string | null;
   published_at: string | null;
   hearts_count: number;
@@ -24,7 +21,6 @@ export interface DevotionCard {
   title: string;
   summary: string;
   theme: string | null;
-  verse_reference?: string | null;
   hearts_count: number;
 }
 

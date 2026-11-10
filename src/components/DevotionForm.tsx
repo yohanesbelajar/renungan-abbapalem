@@ -1,9 +1,21 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useEffect, useMemo, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
-import { slugify } from "@/lib/dates";
+import { slugify, todayJakarta } from "@/lib/dates";
+import { ringkasanOtomatis, teksPolos } from "@/lib/isi";
+
+// Editor Tiptap hanya di klien, supaya halaman form tetap bisa dirender server.
+const BodyEditor = dynamic(() => import("@/components/BodyEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded border border-slate-300 bg-white p-4 text-sm text-slate-400">
+      Memuat editor…
+    </div>
+  ),
+});
 
 export interface DevotionFormValue {
   id?: string;
@@ -12,18 +24,32 @@ export interface DevotionFormValue {
   title: string;
   summary: string;
   body: string;
-  verse_reference: string;
-  verse_text: string;
   theme: string;
   author: string;
-  featured_image_url: string;
   status?: string;
+}
+
+const BULAN = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+
+/** "2026-11" → "November 2026" */
+function labelBulan(bulan: string): string {
+  const [th, bl] = bulan.split("-");
+  return `${BULAN[parseInt(bl, 10) - 1]} ${th}`;
 }
 
 export default function DevotionForm({
   initial,
+  temaAwal = "",
+  bulanIni,
 }: {
   initial?: DevotionFormValue;
+  /** Tema bulan yang sedang diisi (dari tabel themes). */
+  temaAwal?: string;
+  /** Bulan acuan saat menulis baru (YYYY-MM), default bulan berjalan. */
+  bulanIni?: string;
 }) {
   const router = useRouter();
   const editing = !!initial?.id;
@@ -31,22 +57,85 @@ export default function DevotionForm({
   const [form, setForm] = useState<DevotionFormValue>(
     initial ?? {
       slug: "",
-      devotion_date: "",
+      devotion_date: todayJakarta(),
       title: "",
       summary: "",
       body: "",
-      verse_reference: "",
-      verse_text: "",
-      theme: "",
+      theme: temaAwal,
       author: "",
-      featured_image_url: "",
     }
   );
+
+  // Tema milik bulan, bukan milik satu baris: simpan tema per bulan.
+  const bulanTanggal = form.devotion_date
+    ? form.devotion_date.slice(0, 7)
+    : bulanIni ?? todayJakarta().slice(0, 7);
+  const [bulanTema, setBulanTema] = useState<string | null>(null);
+  const [tema, setTema] = useState(temaAwal);
+  const [temaTersimpan, setTemaTersimpan] = useState(temaAwal);
+  const memuatTema = bulanTema !== bulanTanggal;
+
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState("");
+  const [ringkasanManual, setRingkasanManual] = useState(!!initial?.summary);
+
+  const ringkasanOtomatisTeks = useMemo(
+    () => ringkasanOtomatis(form.body),
+    [form.body]
+  );
 
   function set<K extends keyof DevotionFormValue>(k: K, v: DevotionFormValue[K]) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  // Ambil tema milik bulan setiap kali bulan tanggal berubah.
+  useEffect(() => {
+    let batal = false;
+    const supabase = createClient();
+    supabase
+      .from("themes")
+      .select("tema")
+      .eq("bulan", bulanTanggal)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (batal) return;
+        const t = data?.tema ?? "";
+        setBulanTema(bulanTanggal);
+        setTema(t);
+        setTemaTersimpan(t);
+      });
+    return () => {
+      batal = true;
+    };
+  }, [bulanTanggal]);
+
+  // Tema berubah → tanya sekali, lalu ubah untuk seluruh bulan itu.
+  async function simpanTemaBulan() {
+    if (tema.trim() === temaTersimpan.trim()) return;
+    const pakai = window.confirm(
+      `Tema "${tema || "(kosong)"}" akan dipakai untuk SEMUA saat teduh di bulan ${labelBulan(
+        bulanTanggal
+      )}, termasuk yang sudah terbit. Lanjutkan?`
+    );
+    if (!pakai) {
+      setTema(temaTersimpan);
+      return;
+    }
+    setBusy(true);
+    const supabase = createClient();
+    const { error: e } = await supabase.rpc("set_theme_bulan", {
+      p_bulan: bulanTanggal,
+      p_tema: tema,
+    });
+    setBusy(false);
+    if (e) {
+      setError(`Gagal menyimpan tema bulan: ${e.message}`);
+      return;
+    }
+    setTemaTersimpan(tema);
+    setInfo(`Tema ${labelBulan(bulanTanggal)} diperbarui untuk seluruh bulan.`);
   }
 
   async function save(status: "draft" | "published" | "scheduled", scheduleAt?: string) {
@@ -57,39 +146,54 @@ export default function DevotionForm({
 
     setBusy(true);
     setError("");
+    setInfo("");
     const supabase = createClient();
 
+    // Tema bulan ikut disimpan lebih dulu (satu tema untuk seluruh bulan).
+    if (tema.trim() !== temaTersimpan.trim()) {
+      const { error: eTema } = await supabase.rpc("set_theme_bulan", {
+        p_bulan: bulanTanggal,
+        p_tema: tema,
+      });
+      if (eTema) {
+        setBusy(false);
+        setError(`Gagal menyimpan tema bulan: ${eTema.message}`);
+        return;
+      }
+      setTemaTersimpan(tema);
+    }
+
     const slug = editing && form.slug ? form.slug : slugify(form.title);
+    const ringkasan = form.summary.trim() || ringkasanOtomatis(form.body);
     const payload: Record<string, unknown> = {
       slug,
       devotion_date: form.devotion_date,
       title: form.title.trim(),
-      summary: form.summary,
+      summary: ringkasan,
       body: form.body,
-      verse_reference: form.verse_reference,
-      verse_text: form.verse_text,
-      theme: form.theme || null,
-      author: form.author || null,
-      featured_image_url: form.featured_image_url || null,
+      theme: tema.trim() || null,
       status,
       scheduled_at: status === "scheduled" ? new Date(scheduleAt!).toISOString() : null,
     };
     if (status === "published") payload.published_at = new Date().toISOString();
 
+    let devotionId = initial?.id ?? "";
     let result;
     if (editing) {
       result = await supabase
         .from("devotions")
         .update(payload)
-        .eq("id", initial!.id);
+        .eq("id", initial!.id)
+        .select("id")
+        .single();
     } else {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) payload.created_by = user.id;
-      result = await supabase.from("devotions").insert(payload);
+      result = await supabase.from("devotions").insert(payload).select("id").single();
     }
 
-    setBusy(false);
     if (result.error) {
+      setBusy(false);
       const msg = result.error.message;
       if (msg.includes("duplicate key")) {
         if (msg.includes("devotion_date"))
@@ -102,19 +206,35 @@ export default function DevotionForm({
       }
       return;
     }
+    devotionId = (result.data as { id: string } | null)?.id ?? devotionId;
+
+    // Nama penulis disimpan di tabel terpisah — hanya admin/editor yang bisa membacanya.
+    if (devotionId) {
+      if (form.author.trim()) {
+        const { error: ePenulis } = await supabase.from("devotion_authors").upsert(
+          { devotion_id: devotionId, nama: form.author.trim(), updated_at: new Date().toISOString() },
+          { onConflict: "devotion_id" }
+        );
+        if (ePenulis) {
+          setBusy(false);
+          setError(`Saat teduh tersimpan, tetapi nama penulis gagal disimpan: ${ePenulis.message}`);
+          return;
+        }
+      } else {
+        await supabase.from("devotion_authors").delete().eq("devotion_id", devotionId);
+      }
+    }
+
+    setBusy(false);
     router.push("/admin/saat-teduh");
     router.refresh();
   }
 
-  const [scheduleAt, setScheduleAt] = useState("");
-
   const inputCls = "mt-1 w-full rounded border border-slate-300 px-3 py-2.5 text-sm";
+  const bantu = "mt-1 text-xs text-slate-500";
 
   return (
-    <form
-      onSubmit={(e: FormEvent) => e.preventDefault()}
-      className="space-y-4"
-    >
+    <form onSubmit={(e: FormEvent) => e.preventDefault()} className="space-y-4">
       <div>
         <label className="text-sm font-medium">Judul *</label>
         <input
@@ -124,6 +244,7 @@ export default function DevotionForm({
           required
         />
       </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="text-sm font-medium">Tanggal saat teduh *</label>
@@ -134,84 +255,84 @@ export default function DevotionForm({
             onChange={(e) => set("devotion_date", e.target.value)}
             required
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Satu tanggal satu saat teduh — basis data menolak tanggal ganda.
+          <p className={bantu}>
+            Otomatis terisi tanggal hari ini. Satu tanggal satu saat teduh.
           </p>
         </div>
         <div>
-          <label className="text-sm font-medium">Tema</label>
+          <label className="text-sm font-medium">
+            Tema {labelBulan(bulanTanggal)} — satu tema untuk seluruh bulan
+          </label>
           <input
             className={inputCls}
-            value={form.theme}
-            onChange={(e) => set("theme", e.target.value)}
+            value={tema}
+            onChange={(e) => setTema(e.target.value)}
+            onBlur={simpanTemaBulan}
             placeholder="mis. Kasih Karunia"
+            disabled={memuatTema}
           />
+          <p className={bantu}>
+            {memuatTema
+              ? "Memuat tema bulan…"
+              : temaTersimpan
+                ? `Tema bulan ini: “${temaTersimpan}”. Mengubahnya mengubah seluruh bulan.`
+                : "Belum ada tema untuk bulan ini. Cukup diisi sekali."}
+          </p>
         </div>
       </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="text-sm font-medium">Penulis</label>
+          <label className="text-sm font-medium">Penulis (opsional)</label>
           <input
             className={inputCls}
             value={form.author}
             onChange={(e) => set("author", e.target.value)}
+            placeholder="Nama penulis"
           />
-        </div>
-        <div>
-          <label className="text-sm font-medium">URL gambar sampul (opsional)</label>
-          <input
-            className={inputCls}
-            value={form.featured_image_url}
-            onChange={(e) => set("featured_image_url", e.target.value)}
-            placeholder="https://..."
-          />
-        </div>
-      </div>
-      <div>
-        <label className="text-sm font-medium">Ringkasan (tampil di beranda/arsip)</label>
-        <textarea
-          className={inputCls}
-          rows={2}
-          value={form.summary}
-          onChange={(e) => set("summary", e.target.value)}
-        />
-      </div>
-      <div>
-        <label className="text-sm font-medium">Isi saat teduh</label>
-        <textarea
-          className={inputCls}
-          rows={12}
-          value={form.body}
-          onChange={(e) => set("body", e.target.value)}
-          placeholder="Paragraf dipisahkan satu baris kosong."
-        />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="text-sm font-medium">Kutipan Alkitab</label>
-          <textarea
-            className={inputCls}
-            rows={3}
-            value={form.verse_text}
-            onChange={(e) => set("verse_text", e.target.value)}
-            placeholder="Teks ayat (TB)"
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            Kredit “Dikutip dari ALKITAB (TB) © LAI 1974” muncul otomatis.
+          <p className={bantu}>
+            Opsional. Nama penulis hanya terlihat oleh admin dan editor, tidak tampil di
+            halaman publik.
           </p>
         </div>
         <div>
-          <label className="text-sm font-medium">Rujukan</label>
-          <input
+          <label className="text-sm font-medium">Ringkasan (opsional)</label>
+          <textarea
             className={inputCls}
-            value={form.verse_reference}
-            onChange={(e) => set("verse_reference", e.target.value)}
-            placeholder="mis. Yohanes 3:16"
+            rows={2}
+            value={form.summary}
+            onChange={(e) => {
+              set("summary", e.target.value);
+              setRingkasanManual(e.target.value.trim().length > 0);
+            }}
+            placeholder={ringkasanOtomatisTeks || "Kosongkan untuk diambil otomatis dari isi"}
           />
+          <p className={bantu}>
+            Opsional. Tampil di beranda dan arsip. Bila dikosongkan, diambil otomatis dari
+            beberapa kalimat awal isi.
+            {!ringkasanManual && ringkasanOtomatisTeks ? (
+              <>
+                {" "}
+                Pratinjau otomatis: <em>{ringkasanOtomatisTeks}</em>
+              </>
+            ) : null}
+          </p>
         </div>
       </div>
 
+      <div>
+        <label className="text-sm font-medium">Isi saat teduh</label>
+        <div className="mt-1">
+          <BodyEditor value={form.body} onChange={(html) => set("body", html)} />
+        </div>
+        <p className={bantu}>
+          {teksPolos(form.body).length} karakter · semua rujukan ayat di dalam isi menjadi
+          tautan yang membuka ayat Alkitab.
+        </p>
+      </div>
+
       {error && <p className="rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {info && <p className="rounded bg-emerald-50 p-3 text-sm text-emerald-800">{info}</p>}
 
       <div className="flex flex-wrap gap-3 border-t border-slate-200 pt-4">
         <button

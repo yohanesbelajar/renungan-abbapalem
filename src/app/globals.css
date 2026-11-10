@@ -236,6 +236,102 @@ body {
 .isi-teduh a {
   color: var(--color-ungu);
 }
+.isi-teduh h2,
+.isi-teduh h3 {
+  margin: 0;
+}
+.isi-teduh ol,
+.isi-teduh ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.isi-teduh ol {
+  list-style: decimal;
+}
+.isi-teduh ul {
+  list-style: disc;
+}
+.isi-teduh li + li {
+  margin-top: 0.5rem;
+}
+.isi-teduh hr {
+  border: 0;
+  border-top: 1px solid var(--color-garis);
+  margin: 0.5rem 0;
+}
+
+/* Rujukan ayat di dalam isi: tombol yang tampak seperti tautan */
+.tautan-ayat {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--color-ungu);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.tautan-ayat:hover {
+  text-decoration-style: solid;
+}
+
+/* Editor Tiptap di panel admin */
+.isi-editor {
+  min-height: 22rem;
+  padding: 0.9rem 0.9rem 1.6rem;
+  font-size: 15px;
+  line-height: 1.75;
+  outline: none;
+}
+.isi-editor > * + * {
+  margin-top: 0.8rem;
+}
+.isi-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: #94a3b8;
+}
+.isi-editor h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-plum);
+}
+.isi-editor h3 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--color-plum);
+}
+.isi-editor ul,
+.isi-editor ol {
+  padding-left: 1.35rem;
+}
+.isi-editor ul {
+  list-style: disc;
+}
+.isi-editor ol {
+  list-style: decimal;
+}
+.isi-editor blockquote {
+  border-left: 3px solid var(--color-ungu);
+  padding-left: 0.85rem;
+  color: var(--color-tinta-2);
+  font-style: italic;
+}
+.isi-editor hr {
+  border: 0;
+  border-top: 1px solid #cbd5e1;
+  margin: 1rem 0;
+}
+.isi-editor:focus-visible {
+  outline: none;
+}
 
 :focus-visible {
   outline: 2px solid var(--color-ungu);

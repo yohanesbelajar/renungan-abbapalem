@@ -156,7 +156,7 @@ export function cariRujukan(teks: string): Rujukan[] {
   return hasil;
 }
 
-/** Kenali satu rujukan dari satu potongan teks utuh (mis. field verse_reference). */
+/** Kenali satu rujukan dari satu potongan teks utuh. */
 export function parseRujukan(teks: string): Rujukan | null {
   const daftar = cariRujukan(teks);
   return daftar.length > 0 ? daftar[0] : null;

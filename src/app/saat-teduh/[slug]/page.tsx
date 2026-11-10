@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import DevotionActions from "@/components/DevotionActions";
-import { TeksAyat, TombolRujukan } from "@/components/AyatTeks";
+import IsiTeduh from "@/components/IsiTeduh";
 import type { DevotionCard } from "@/lib/types";
 
 const BULAN_ID = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -55,7 +55,7 @@ export default async function DevotionPage({
   const { data: d } = await supabase
     .from("devotions")
     .select(
-      "id, slug, devotion_date, title, summary, body, verse_reference, verse_text, theme, author, hearts_count"
+      "id, slug, devotion_date, title, summary, body, theme, hearts_count"
     )
     .eq("slug", slug)
     .eq("status", "published")
@@ -152,89 +152,18 @@ export default async function DevotionPage({
       </h1>
       <p className="mt-3 text-[14.5px] text-tinta-2">
         {tanggalPanjang(d.devotion_date)}
-        {d.author ? ` · ${d.author}` : ""}
       </p>
 
       <div className="mt-6 h-px w-full bg-garis" />
 
-      {/* Isi: instruksi (rujukan biru tebal), blok pertanyaan tebal + garis,
-          label Pengajar/Pengajaran berwarna, paragraf badan bergaya inline */}
-      <div className="isi-teduh mt-8 space-y-4 text-[17.5px] leading-[1.85] text-[#121212]">
-        {(() => {
-          const blok: { jenis: string; teks: string }[] = [];
-          for (const raw of d.body.split(/\n{2,}/)) {
-            const t = raw.trim();
-            if (!t) continue;
-            if (t.includes("Bacalah beberapa kali")) blok.push({ jenis: "instruksi", teks: t });
-            else if (/^\d+\.\s/.test(t)) blok.push({ jenis: "pertanyaan", teks: t });
-            else if (/^(Pengantar|Pengajaran|Penerapan|Renungan|Pertanyaan):$/.test(t))
-              blok.push({ jenis: "label", teks: t });
-            else blok.push({ jenis: "isi", teks: t });
-          }
-          return blok.map((b, i) => {
-            const berikut = blok[i + 1];
-            if (b.jenis === "instruksi") {
-              const idx = b.teks.indexOf("Bacalah beberapa kali");
-              const rujuk = b.teks.slice(0, idx).trim();
-              return (
-                <div key={i} className="space-y-3">
-                  {rujuk && (
-                    <TeksAyat
-                      teks={rujuk}
-                      kunci={`r${i}`}
-                      className="text-[19px] font-bold tracking-tight text-[#0000ff]"
-                    />
-                  )}
-                  <TeksAyat
-                    teks={b.teks.slice(idx)}
-                    kunci={`s${i}`}
-                    className="text-tinta-2"
-                  />
-                </div>
-              );
-            }
-            if (b.jenis === "pertanyaan") {
-              const akhirPertanyaan = !berikut || berikut.jenis !== "pertanyaan";
-              return (
-                <div key={i} className="rounded-lg bg-krem-2 px-4 py-3">
-                  <TeksAyat teks={b.teks} kunci={`q${i}`} className="font-bold text-tinta" />
-                  {akhirPertanyaan && <hr className="mt-4 border-garis" />}
-                </div>
-              );
-            }
-            if (b.jenis === "label") {
-              const merah = b.teks.startsWith("Pengantar");
-              return (
-                <p
-                  key={i}
-                  className="pt-3 text-[13px] font-bold uppercase tracking-[0.08em]"
-                  style={{ color: merah ? "#c0121a" : "#1a34c8" }}
-                >
-                  {b.teks.replace(/:$/, "")}
-                </p>
-              );
-            }
-            return <TeksAyat key={i} teks={b.teks} kunci={`p${i}`} />;
-          });
-        })()}
-      </div>
+      {/* Isi saat teduh: HTML editor Tiptap atau teks polos lama, rujukan ayat
+          di dalamnya otomatis menjadi tautan pembuka ayat. */}
+      <IsiTeduh isi={d.body} />
 
       {/* Kaki halaman seperti PDF */}
       <p className="mt-10 text-center text-[12px] italic text-[#a6a6a6]">
         Dept. Pengajaran Abbalove Palem
       </p>
-
-      {/* Rujukan Alkitab saja — teks ayat dibuka lewat pop-up saat rujukan diklik */}
-      {d.verse_reference ? (
-        <p className="mt-8 rounded-xl border border-garis border-l-[3px] border-l-[#0000ff] bg-[#EEF3FB] px-4 py-3.5 text-[14.5px] font-semibold text-[#0000ff]">
-          Ayat bacaan:{" "}
-          <TombolRujukan
-            rujukan={d.verse_reference}
-            teksCadangan={d.verse_text}
-            className="font-semibold text-[#0000ff] decoration-[#0000ff]/50"
-          />
-        </p>
-      ) : null}
 
       {/* Aksi */}
       <DevotionActions

@@ -18,7 +18,7 @@ export default async function HomePage() {
 
   const { data: todayDevotion } = await supabase
     .from("devotions")
-    .select("slug, devotion_date, title, summary, theme, verse_reference, hearts_count")
+    .select("slug, devotion_date, title, summary, theme, hearts_count")
     .eq("status", "published")
     .eq("devotion_date", today)
     .maybeSingle();
@@ -27,7 +27,7 @@ export default async function HomePage() {
   if (!todayDevotion) {
     const { data } = await supabase
       .from("devotions")
-      .select("slug, devotion_date, title, summary, theme, verse_reference, hearts_count")
+      .select("slug, devotion_date, title, summary, theme, hearts_count")
       .eq("status", "published")
       .order("devotion_date", { ascending: false })
       .limit(1);
@@ -36,7 +36,7 @@ export default async function HomePage() {
 
   const { data: archive } = await supabase
     .from("devotions")
-    .select("slug, devotion_date, title, summary, theme, verse_reference, hearts_count")
+    .select("slug, devotion_date, title, summary, theme, hearts_count")
     .eq("status", "published")
     .neq("devotion_date", today)
     .order("devotion_date", { ascending: false })

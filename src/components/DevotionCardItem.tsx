@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { formatTanggalID } from "@/lib/dates";
-import { TombolRujukan } from "@/components/AyatTeks";
 import type { DevotionCard } from "@/lib/types";
 
 export default function DevotionCardItem({
@@ -47,17 +46,7 @@ export default function DevotionCardItem({
         </p>
       )}
 
-      <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-        {d.verse_reference ? (
-          <p className="relative z-10 w-fit text-[13px] font-medium text-ungu">
-            <TombolRujukan
-              rujukan={d.verse_reference}
-              className="text-[13px] font-medium text-ungu decoration-ungu/40"
-            />
-          </p>
-        ) : (
-          <span />
-        )}
+      <div className="mt-auto flex items-center justify-end gap-3 pt-4">
         <p className="flex items-center gap-1 text-[12.5px] text-tinta-3">
           <span aria-hidden className="text-[13px] text-ungu/70">
             ♥

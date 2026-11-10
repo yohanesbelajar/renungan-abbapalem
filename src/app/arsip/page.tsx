@@ -41,7 +41,7 @@ export default async function ArchivePage({
   let q = supabase
     .from("devotions")
     .select(
-      "slug, devotion_date, title, summary, theme, verse_reference, hearts_count"
+      "slug, devotion_date, title, summary, theme, hearts_count"
     )
     .eq("status", "published")
     .order("devotion_date", { ascending: false })
@@ -57,7 +57,7 @@ export default async function ArchivePage({
   }
   if (sp.tema) q = q.eq("theme", sp.tema);
 
-  // Pencarian topik & ayat: judul, ringkasan, tema, referensi ayat, isi.
+  // Pencarian topik & ayat: judul, ringkasan, tema, isi.
   // Varian kedua menyisipkan spasi sebelum angka agar "matius9" tetap
   // menemukan "Matius 9".
   if (cari) {
@@ -67,7 +67,7 @@ export default async function ArchivePage({
     const cond = [...pats]
       .map(
         (p) =>
-          `title.ilike.*${p}*,summary.ilike.*${p}*,theme.ilike.*${p}*,verse_reference.ilike.*${p}*,body.ilike.*${p}*`
+          `title.ilike.*${p}*,summary.ilike.*${p}*,theme.ilike.*${p}*,body.ilike.*${p}*`
       )
       .join(",");
     q = q.or(cond);
