@@ -12,6 +12,22 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Isi pop-up ayat: bilah gulir tipis yang terlihat di panel gelap */
+.ayat-isi {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+.ayat-isi::-webkit-scrollbar {
+  width: 6px;
+}
+.ayat-isi::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 9999px;
+}
+.ayat-isi::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 body {
   background: #FDF9F3;
   color: #1f2937;

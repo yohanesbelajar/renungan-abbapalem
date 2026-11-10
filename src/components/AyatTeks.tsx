@@ -223,7 +223,7 @@ function PopupAyat({
         </div>
 
         {/* Isi ayat */}
-        <div className="max-h-[65vh] overflow-y-auto px-5 py-4 text-[16px] leading-[1.75] text-white">
+        <div className="ayat-isi max-h-[65vh] overflow-y-auto overscroll-contain px-5 py-4 text-[16px] leading-[1.75] text-white">
           {memuat && (
             <p className="flex items-center gap-3 py-6 text-white/70">
               <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
