@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatTanggalID } from "@/lib/dates";
+import { TombolRujukan } from "@/components/AyatTeks";
 import type { DevotionCard } from "@/lib/types";
 
 export default function DevotionCardItem({ d }: { d: DevotionCard }) {
@@ -23,7 +24,11 @@ export default function DevotionCardItem({ d }: { d: DevotionCard }) {
       </h3>
       {d.verse_reference && (
         <p className="mt-1 text-xs font-medium text-[#9B3F76]">
-          Ayat: {d.verse_reference}
+          Ayat:{" "}
+          <TombolRujukan
+            rujukan={d.verse_reference}
+            className="text-xs font-medium text-[#9B3F76] decoration-[#9B3F76]/50"
+          />
         </p>
       )}
       {d.summary && (

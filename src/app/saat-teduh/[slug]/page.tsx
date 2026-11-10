@@ -5,45 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { LAI_CREDIT } from "@/lib/constants";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import DevotionActions from "@/components/DevotionActions";
+import { TeksAyat, TombolRujukan } from "@/components/AyatTeks";
 import type { DevotionCard } from "@/lib/types";
-
-// Gaya inline hasil parse PDF: **{#hex}teks** (tebal), ~~{#hex}teks~~ (miring).
-// Warna hitam ditulis tanpa {#hex}. Parser di dalam tebal juga memecah miring.
-function italik(teks: string, kunci: string): React.ReactNode[] {
-  const keluar: React.ReactNode[] = [];
-  const re = /~~(?:\{(#[0-9a-fA-F]{6})\})?([\s\S]*?)~~/g;
-  let terakhir = 0;
-  let m;
-  while ((m = re.exec(teks))) {
-    if (m.index > terakhir) keluar.push(teks.slice(terakhir, m.index));
-    keluar.push(
-      <em key={`${kunci}-i${m.index}`} style={m[1] ? { color: m[1] } : undefined}>
-        {m[2]}
-      </em>
-    );
-    terakhir = re.lastIndex;
-  }
-  if (terakhir < teks.length) keluar.push(teks.slice(terakhir));
-  return keluar;
-}
-
-function gayaTeks(teks: string, kunci = "b"): React.ReactNode[] {
-  const keluar: React.ReactNode[] = [];
-  const re = /\*\*(?:\{(#[0-9a-fA-F]{6})\})?([\s\S]*?)\*\*/g;
-  let terakhir = 0;
-  let m;
-  while ((m = re.exec(teks))) {
-    if (m.index > terakhir) keluar.push(...italik(teks.slice(terakhir, m.index), `${kunci}p${m.index}`));
-    keluar.push(
-      <strong key={`${kunci}b${m.index}`} style={m[1] ? { color: m[1] } : undefined}>
-        {italik(m[2], `${kunci}i${m.index}`)}
-      </strong>
-    );
-    terakhir = re.lastIndex;
-  }
-  if (terakhir < teks.length) keluar.push(...italik(teks.slice(terakhir), `${kunci}t`));
-  return keluar;
-}
 
 const BULAN_ID = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
   "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -203,9 +166,17 @@ export default async function DevotionPage({
               return (
                 <div key={i} className="space-y-3">
                   {rujuk && (
-                    <p className="text-lg font-bold text-[#0000ff]">{gayaTeks(rujuk, `r${i}`)}</p>
+                    <TeksAyat
+                      teks={rujuk}
+                      kunci={`r${i}`}
+                      className="text-lg font-bold text-[#0000ff]"
+                    />
                   )}
-                  <p className="text-slate-800">{gayaTeks(b.teks.slice(idx), `s${i}`)}</p>
+                  <TeksAyat
+                    teks={b.teks.slice(idx)}
+                    kunci={`s${i}`}
+                    className="text-slate-800"
+                  />
                 </div>
               );
             }
@@ -213,7 +184,7 @@ export default async function DevotionPage({
               const akhirPertanyaan = !berikut || berikut.jenis !== "pertanyaan";
               return (
                 <div key={i}>
-                  <p className="font-bold text-slate-900">{gayaTeks(b.teks, `q${i}`)}</p>
+                  <TeksAyat teks={b.teks} kunci={`q${i}`} className="font-bold text-slate-900" />
                   {akhirPertanyaan && <hr className="mt-4 border-slate-300" />}
                 </div>
               );
@@ -230,7 +201,7 @@ export default async function DevotionPage({
                 </p>
               );
             }
-            return <p key={i}>{gayaTeks(b.teks, `p${i}`)}</p>;
+            return <TeksAyat key={i} teks={b.teks} kunci={`p${i}`} />;
           });
         })()}
       </div>
@@ -240,15 +211,32 @@ export default async function DevotionPage({
         Dept. Pengajaran Abbalove Palem
       </p>
 
-      {/* Kutipan Alkitab (hanya bila ada teks kutipan) */}
+      {/* Kutipan Alkitab (rujukan tetap tampil walau kutipan kosong —
+          rujukan yang diklik membuka pop-up berisi teks ayat) */}
       {d.verse_text ? (
         <blockquote className="mt-8 max-h-[32rem] overflow-y-auto overscroll-contain rounded-lg border-l-4 border-[#0000ff] bg-[#EEF3FB] p-4">
           <p className="italic">“{d.verse_text}”</p>
           <p className="mt-2 text-sm font-semibold text-[#0000ff]">
-            — {d.verse_reference}
+            —{" "}
+            {d.verse_reference && (
+              <TombolRujukan
+                rujukan={d.verse_reference}
+                teksCadangan={d.verse_text}
+                className="font-semibold text-[#0000ff] decoration-[#0000ff]/50"
+              />
+            )}
           </p>
           <p className="mt-1 text-xs text-slate-500">{LAI_CREDIT}</p>
         </blockquote>
+      ) : d.verse_reference ? (
+        <p className="mt-8 rounded-lg border-l-4 border-[#0000ff] bg-[#EEF3FB] p-4 text-sm font-semibold text-[#0000ff]">
+          Ayat rujukan:{" "}
+          <TombolRujukan
+            rujukan={d.verse_reference}
+            className="font-semibold text-[#0000ff] decoration-[#0000ff]/50"
+          />
+          <span className="mt-1 block text-xs font-normal text-slate-500">{LAI_CREDIT}</span>
+        </p>
       ) : null}
 
       {/* Aksi */}
