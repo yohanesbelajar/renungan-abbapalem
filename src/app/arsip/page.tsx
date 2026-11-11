@@ -162,83 +162,88 @@ export default async function ArchivePage({
       <h1 className="judul-rapat-sm mt-2 text-[32px] text-plum sm:text-[40px]">
         Semua saat teduh
       </h1>
-      <p className="mt-2 max-w-xl text-[15.5px] leading-relaxed text-tinta-2">
-        Cari berdasarkan topik atau ayat — mis. “jiwa”, “Matius 9”, atau “Yoh
-        3:16” (singkatan kitab dikenali) — atau telusuri menurut bulan dan
-        tema.
-      </p>
+      {!cari && (
+        <p className="mt-2 max-w-xl text-[15.5px] leading-relaxed text-tinta-2">
+          Cari berdasarkan topik atau ayat — mis. “jiwa”, “Matius 9”, atau “Yoh
+          3:16” (singkatan kitab dikenali) — atau telusuri menurut bulan dan
+          tema.
+        </p>
+      )}
 
-      {/* Pencarian topik / ayat */}
-      <form method="GET" action="/arsip" className="mt-7 flex gap-2">
+      {/* Satu formulir untuk kata cari + bulan + tema: tombol mana pun yang
+          ditekan membawa SELURUH isian, jadi kata pencarian tidak pernah hilang
+          (dulu "Tampilkan" membuang ?cari). */}
+      <form method="GET" action="/arsip" className="mt-7">
+        <div className="flex gap-2">
           <div className="relative flex-1">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-tinta-2"
-          >
-            <IkonCari className="h-[18px] w-[18px]" />
-          </span>
-          <input
-            type="search"
-            name="cari"
-            defaultValue={sp.cari ?? ""}
-            placeholder="Cari topik atau ayat… (mis. “Yoh 3:16”)"
-            className="min-h-12 w-full rounded-full border border-garis bg-kertas pl-11 pr-4 py-3 text-[15px] text-tinta shadow-kartu placeholder:text-tinta-3 focus:border-ungu/50 focus:outline-none"
-            aria-label="Cari topik atau ayat"
-          />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-tinta-2"
+            >
+              <IkonCari className="h-[18px] w-[18px]" />
+            </span>
+            <input
+              type="search"
+              name="cari"
+              defaultValue={sp.cari ?? ""}
+              placeholder="Cari topik atau ayat… (mis. “Yoh 3:16”)"
+              className="min-h-12 w-full rounded-full border border-garis bg-kertas pl-11 pr-4 py-3 text-[15px] text-tinta shadow-kartu placeholder:text-tinta-3 focus:border-ungu/50 focus:outline-none"
+              aria-label="Cari topik atau ayat"
+            />
+          </div>
+          <button type="submit" className="btn btn-utama shrink-0 px-5">
+            <IkonCari className="h-4 w-4" />
+            Cari
+          </button>
         </div>
-        <button type="submit" className="btn btn-utama shrink-0 px-5">
-          <IkonCari className="h-4 w-4" />
-          Cari
-        </button>
-      </form>
 
-      {/* Filter bulan & tema */}
-      <form method="GET" action="/arsip" className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-        {sp.cari && <input type="hidden" name="cari" value={sp.cari} />}
-        <select
-          name="bulan"
-          defaultValue={sp.bulan ?? ""}
-          className="min-h-11 flex-1 rounded-xl border border-garis bg-kertas px-3 py-2 text-[14px] text-tinta shadow-[0_1px_2px_rgba(31,27,24,0.04)] focus:border-ungu/50 focus:outline-none"
-          aria-label="Bulan"
-        >
-          <option value="">Semua bulan</option>
-          {years.flatMap((y) =>
-            MONTHS.slice(1).map((mn, i) => (
-              <option key={`${y}-${i}`} value={`${y}-${String(i + 1).padStart(2, "0")}`}>
-                {mn} {y}
-              </option>
-            ))
-          )}
-        </select>
-        <select
-          name="tema"
-          defaultValue={sp.tema ?? ""}
-          className="min-h-11 flex-1 rounded-xl border border-garis bg-kertas px-3 py-2 text-[14px] text-tinta shadow-[0_1px_2px_rgba(31,27,24,0.04)] focus:border-ungu/50 focus:outline-none"
-          aria-label="Tema"
-        >
-          <option value="">Semua tema</option>
-          {themeList.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        <button type="submit" className="btn btn-halus shrink-0 px-4">
-          Tampilkan
-        </button>
-        {adaFilter && (
-          <Link
-            href="/arsip"
-            className="flex min-h-11 items-center rounded-xl px-3 py-2 text-[14px] font-medium text-tinta-3 transition hover:text-ungu"
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <select
+            name="bulan"
+            defaultValue={sp.bulan ?? ""}
+            className="min-h-11 flex-1 rounded-xl border border-garis bg-kertas px-3 py-2 text-[14px] text-tinta shadow-[0_1px_2px_rgba(31,27,24,0.04)] focus:border-ungu/50 focus:outline-none"
+            aria-label="Bulan"
           >
-            Reset
-          </Link>
-        )}
+            <option value="">Semua bulan</option>
+            {years.flatMap((y) =>
+              MONTHS.slice(1).map((mn, i) => (
+                <option key={`${y}-${i}`} value={`${y}-${String(i + 1).padStart(2, "0")}`}>
+                  {mn} {y}
+                </option>
+              ))
+            )}
+          </select>
+          <select
+            name="tema"
+            defaultValue={sp.tema ?? ""}
+            className="min-h-11 flex-1 rounded-xl border border-garis bg-kertas px-3 py-2 text-[14px] text-tinta shadow-[0_1px_2px_rgba(31,27,24,0.04)] focus:border-ungu/50 focus:outline-none"
+            aria-label="Tema"
+          >
+            <option value="">Semua tema</option>
+            {themeList.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="btn btn-halus shrink-0 px-4">
+            Tampilkan
+          </button>
+          {adaFilter && (
+            <Link
+              href="/arsip"
+              className="flex min-h-11 items-center rounded-xl px-3 py-2 text-[14px] font-medium text-tinta-3 transition hover:text-ungu"
+            >
+              Reset
+            </Link>
+          )}
+        </div>
       </form>
 
-      {/* Topik bulanan menonjol */}
-      {!sp.bulan && topikBulanan.length > 0 && (
-        <section className="mt-9">
+      {/* Topik bulanan menonjol — disembunyikan saat mencari supaya kartu hasil
+          langsung terlihat (dulu blok ini mendorong hasil ke luar layar HP). */}
+      {!cari && !sp.bulan && topikBulanan.length > 0 && (
+        <section className="mt-8">
           <h2 className="label-kecil text-tinta-3">Topik tiap bulan</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {topikBulanan.map(([ym, v]) => (
@@ -264,7 +269,7 @@ export default async function ArchivePage({
 
       {/* Ringkasan hasil pencarian */}
       {adaFilter && (
-        <p className="mt-8 text-[14.5px] text-tinta-2">
+        <p className={`${cari ? "mt-6" : "mt-8"} text-[14.5px] text-tinta-2`}>
           <strong className="font-semibold text-tinta">
             {devotions?.length ?? 0}
           </strong>{" "}
@@ -288,7 +293,8 @@ export default async function ArchivePage({
       )}
 
       {/* Hasil, dikelompokkan per bulan dengan tema bulan */}
-      <div className="mt-6 space-y-10">
+      <div id="hasil" className={`${cari ? "mt-4" : "mt-6"} scroll-mt-24 space-y-10`}>
+
         {grup.map((g) => (
           <section key={g.ym}>
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-garis pb-3">
