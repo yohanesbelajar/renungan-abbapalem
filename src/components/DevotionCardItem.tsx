@@ -40,11 +40,8 @@ export default function DevotionCardItem({
         </Link>
       </h3>
 
-      {d.summary && (
-        <p className="mt-2 line-clamp-2 text-[14.5px] leading-relaxed text-tinta-2">
-          {d.summary}
-        </p>
-      )}
+      {/* Potongan isi (summary) tidak ditampilkan di kartu mana pun —
+          permintaan Jo 12 Nov 2026: daftar hanya tanggal + tema + judul + hati. */}
 
       <div className="mt-auto flex items-center justify-end gap-3 pt-4">
         <p className="flex items-center gap-1 text-[12.5px] text-tinta-3">

@@ -450,14 +450,14 @@ export default async function ArchivePage({
       {mode === "pilih-tahun" && (
         <>
           <h2 className="sr-only">Pilih tahun</h2>
-          <section className="mt-7 grid gap-4 sm:grid-cols-3">
+          <section className="mt-7 grid gap-3 sm:grid-cols-3">
             {daftarTahun.map((y) => (
               <Link
                 key={y}
                 href={`/arsip?tahun=${y}`}
-                className="kartu kartu-naik flex items-baseline justify-between gap-3 p-5 sm:flex-col sm:items-start sm:gap-1 sm:p-6"
+                className="kartu kartu-naik flex items-baseline justify-between gap-3 p-4 sm:flex-col sm:items-start sm:gap-1 sm:p-5"
               >
-                <span className="judul-rapat-sm text-[38px] leading-none text-plum sm:text-[46px]">
+                <span className="judul-rapat-sm text-[22px] leading-none text-plum sm:text-[26px]">
                   {y}
                 </span>
                 <span className="text-[14.5px] text-tinta-2">
