@@ -56,13 +56,16 @@ print(f"filter tema Jiwa-jiwa: kartu={k2} baris={h2}")
 if k2 != h2 or k2 == 0:
     gagal.append("filter tema")
 
-# tanpa filter: tidak boleh ada baris hitungan
+# halaman tanpa filter = pilih tahun: tanpa kartu judul, tanpa baris hitungan,
+# dan tepat 3 pilihan tahun (rancangan baru 12 Nov 2026)
 tanpa = ambil("")
 kartu_tanpa = tanpa.count('href="/saat-teduh/')
 ada_baris = bool(re.search(r'</strong>(?:<!-- -->)?\s*saat teduh (?:ditemukan|cocok)', tanpa))
-print(f"halaman tanpa filter: kartu={kartu_tanpa}, baris hitungan muncul={ada_baris} (harus False)")
-if kartu_tanpa == 0 or ada_baris:
-    gagal.append("halaman tanpa filter")
+pilihan_tahun = len(re.findall(r'href="/arsip\?tahun=\d{4}"', tanpa))
+print(f"halaman pilih tahun: kartu={kartu_tanpa}, pilihan tahun={pilihan_tahun}, "
+      f"baris hitungan muncul={ada_baris} (harus 0, 3, False)")
+if kartu_tanpa != 0 or pilihan_tahun != 3 or ada_baris:
+    gagal.append("halaman pilih tahun")
 
 print("\nGAGAL:", gagal if gagal else "tidak ada")
 sys.exit(1 if gagal else 0)

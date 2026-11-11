@@ -77,11 +77,15 @@ function cek(nama, syarat, info = '') {
   cek('kembali ke semua tulisan (angka penuh)', /^366 /.test(teks3.trim()), teks3);
   cek('hitungan tanpa "di judul"', !/di judul/.test(teks3), teks3);
 
-  // 5. Kotak "Topik tiap bulan": sembunyi saat mencari, tampil saat tanpa pencarian
-  cek('kotak "Topik tiap bulan" sembunyi saat mencari', await page.locator('text=Topik tiap bulan').count() === 0);
+  // 5. Hierarki baru (12 Nov 2026): "Topik tiap bulan" diganti pilih tahun/bulan
+  cek('kotak "Topik tiap bulan" sudah tidak ada', await page.locator('text=Topik tiap bulan').count() === 0);
   await page.goto(BASE + '/arsip', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(1200);
-  cek('kotak "Topik tiap bulan" tampil saat tanpa pencarian', await page.locator('text=Topik tiap bulan').count() > 0);
+  cek(
+    '/arsip = 3 pilihan tahun, 0 kartu judul',
+    (await page.locator('a[href^="/arsip?tahun="]').count()) === 3 &&
+      (await page.locator('article.kartu').count()) === 0
+  );
 
   // 6. Lebar desktop: centang di kotak teks tidak meluber
   await page.setViewportSize({ width: 1200, height: 900 });
