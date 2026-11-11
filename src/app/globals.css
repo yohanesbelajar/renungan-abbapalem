@@ -260,6 +260,15 @@ body {
   margin: 0.5rem 0;
 }
 
+/* Gambar ilustrasi di dalam isi (bahan PDF 2024): selebar kolom, tanpa bingkai */
+.isi-teduh img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.25rem auto;
+  border-radius: 6px;
+}
+
 /* Rujukan ayat di dalam isi: tombol yang tampak seperti tautan */
 .tautan-ayat {
   display: inline;
