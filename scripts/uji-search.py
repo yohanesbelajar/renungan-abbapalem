@@ -10,8 +10,16 @@ BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:3000"
 
 
 def ambil(qs):
-    return subprocess.run(["curl", "-s", f"{BASE}/arsip{qs}"],
-                          capture_output=True, text=True).stdout
+    # -w %{http_code}: status ikut tercetak supaya kegagalan infra (bukan
+    # kegagalan pencarian) bisa dibedakan saat uji ke live.
+    keluaran = subprocess.run(
+        ["curl", "-s", "-w", "\n%{http_code}", f"{BASE}/arsip{qs}"],
+        capture_output=True, text=True).stdout
+    body, _, kode = keluaran.rpartition("\n")
+    kode = kode.strip()
+    if kode and kode != "200":
+        print(f"  [peringatan: HTTP {kode} untuk {qs}]")
+    return body
 
 
 def metrik(html):
