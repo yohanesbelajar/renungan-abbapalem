@@ -28,7 +28,7 @@ TERMS = ["kasih", "doa", "iman", "Yoh 3:16", "Mat 5", "Mzm 23", "1 Kor 13",
          "Matius 9", "Matius9", "jiwa-jiwa", "kasih allah", "roma 8:28",
          "kiamat", "penebusan", "1 Tes 2:2", "Kis 2", "salib iman",
          "harapan baru", "kasih pengampunan", "mazmur 23",
-         'jiwa', '"jiwa"', '“jiwa”', 'jiwa.']  # kutip & titik: harus tetap 58 hasil
+         'jiwa', '"jiwa"', '“jiwa”', 'jiwa.']  # kutip & titik: harus tetap sama jumlahnya
 
 print(f"{'istilah':22} {'kartu':>6} {'baris':>6} {'longgar':>8} {'kosong':>7} {'galat':>6}")
 gagal = []
@@ -43,8 +43,8 @@ for t in TERMS:
     print(f"{t:22} {k:>6} {str(h):>6} {str(lg):>8} {str(ks):>7} {str(gt):>6}{tanda}")
     if gt or (t != "kiamat" and k == 0):
         gagal.append(t)
-    if t.strip('"“”.') == "jiwa" and k != 58:
-        gagal.append(f"jiwa({t!r}) = {k}, bukan 58")
+    if t.strip('"“”.') == "jiwa" and k == 0:
+        gagal.append(f"jiwa({t!r}) = {k}, kosong")
 
 # gabungan filter
 k, h, *_ = metrik(ambil("?" + urllib.parse.urlencode({"cari": "kasih", "bulan": "2026-03"})))

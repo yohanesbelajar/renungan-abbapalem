@@ -47,7 +47,7 @@ function cek(nama, syarat, info = '') {
   const teks = await page.locator('p', { hasText: 'saat teduh ditemukan' }).first().innerText();
   cek('hitungan menyebut "di judul"', /di judul/.test(teks), teks);
   const kartuJudul = await page.locator('a[href^="/saat-teduh/"]').count();
-  cek('ada kartu hasil (judul saja)', kartuJudul > 0 && kartuJudul < 83, 'kartu=' + kartuJudul);
+  cek('ada kartu hasil (judul saja)', kartuJudul > 0 && kartuJudul < 366, 'kartu=' + kartuJudul);
   const kotak = await page.locator('article.kartu').first().boundingBox();
   cek('kartu pertama terlihat di layar HP tanpa gulir', kotak && kotak.y + 40 < 780, kotak ? 'y=' + Math.round(kotak.y) : 'tidak ada');
 
@@ -74,7 +74,7 @@ function cek(nama, syarat, info = '') {
   cek('tanpa centang: URL tanpa di=judul', u3.searchParams.get('di') !== 'judul', page.url());
   cek('bulan dikosongkan lewat filter', !u3.searchParams.get('bulan'), page.url());
   const teks3 = await page.locator('p', { hasText: 'saat teduh ditemukan' }).first().innerText();
-  cek('kembali ke semua tulisan = 83', /^83 /.test(teks3.trim()), teks3);
+  cek('kembali ke semua tulisan (angka penuh)', /^366 /.test(teks3.trim()), teks3);
   cek('hitungan tanpa "di judul"', !/di judul/.test(teks3), teks3);
 
   // 5. Kotak "Topik tiap bulan": sembunyi saat mencari, tampil saat tanpa pencarian

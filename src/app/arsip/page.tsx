@@ -20,9 +20,45 @@ const MONTHS = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
-// Batas hasil per pencarian (total data terbit jauh di bawah ini;
-// dinaikkan dari 60 karena kata umum seperti "kasih" mencapai ratusan)
-const BATAS_HASIL = 800;
+// Batas hasil per halaman arsip/pencarian. Dinaikkan dari 60 (kata umum
+// seperti "kasih" mencapai ratusan) lalu dari 800 (total published sudah
+// 1.030 baris, sehingga arsip 2024 Jan–Agu tidak pernah tampil).
+const BATAS_HASIL = 1200;
+
+// PostgREST membatasi maksimum 1.000 baris per permintaan (limit yang lebih
+// besar tetap dipotong 1.000 tanpa galat), jadi setiap kueri diambil per
+// halaman lalu disambung.
+const HALAMAN = 1000;
+
+// Batas aman query ringan (devotion_date + theme) — dipakai untuk daftar
+// tahun/bulan, daftar tema, dan topik bulanan. Harus mencakup SEMUA baris
+// published, bukan 500 terbaru seperti sebelumnya.
+const BATAS_RINGKAS = 20000;
+
+type Hasil<T> = { data: T[] | null; error?: unknown };
+
+// Ambil semua baris dengan penyambungan halaman + satu percobaan ulang per
+// halaman bila permintaan gagal (mis. hiccup singkat ke Supabase).
+async function ambilSemua<T>(
+  bikin: (dari: number, sampai: number) => PromiseLike<Hasil<T>>,
+  batas: number
+): Promise<{ data: T[]; error: boolean }> {
+  const keluaran: T[] = [];
+  let galat = false;
+  for (let dari = 0; dari < batas; dari += HALAMAN) {
+    const sampai = Math.min(dari + HALAMAN, batas) - 1;
+    let r = await bikin(dari, sampai);
+    if (r.error) r = await bikin(dari, sampai);
+    if (r.error) {
+      galat = true;
+      break;
+    }
+    const d = r.data ?? [];
+    keluaran.push(...d);
+    if (d.length < sampai - dari + 1) break;
+  }
+  return { data: keluaran, error: galat };
+}
 
 function bulanDari(ym: string): string {
   return `${MONTHS[parseInt(ym.slice(5))]} ${ym.slice(0, 4)}`;
@@ -40,7 +76,8 @@ export default async function ArchivePage({
   const kolom = kolomCari(cakupan);
   const hanyaJudul = cakupan === "judul";
 
-  // Kueri dasar: filter bulan/tema + urut tanggal terbaru
+  // Kueri dasar: filter bulan/tema + urut tanggal terbaru.
+  // Tanpa .limit() — jatah baris datang dari .range() di ambilSemua().
   const kueriDasar = () => {
     let q = supabase
       .from("devotions")
@@ -48,8 +85,7 @@ export default async function ArchivePage({
         "slug, devotion_date, title, summary, theme, hearts_count"
       )
       .eq("status", "published")
-      .order("devotion_date", { ascending: false })
-      .limit(BATAS_HASIL);
+      .order("devotion_date", { ascending: false });
 
     if (sp.bulan && /^\d{4}-\d{2}$/.test(sp.bulan)) {
       q = q.gte("devotion_date", `${sp.bulan}-01`).lt(
@@ -62,14 +98,6 @@ export default async function ArchivePage({
     if (sp.tema) q = q.eq("theme", sp.tema);
     return q;
   };
-
-  // Satu percobaan ulang bila permintaan gagal (mis. hiccup singkat ke
-  // Supabase) — tanpa ini pengunjung melihat "tidak ada" padahal data ada.
-  async function coba<T>(bikin: () => PromiseLike<T>): Promise<T> {
-    let r = await bikin();
-    if ((r as { error?: unknown }).error) r = await bikin();
-    return r;
-  }
 
   // Pencarian dua lapis (lihat src/lib/cari.ts):
   //  1. frasa + varian singkatan kitab & spasi angka
@@ -84,42 +112,59 @@ export default async function ArchivePage({
     const flat = pola
       .flatMap((p) => kolom.map((c) => `${c}.ilike.*${p}*`))
       .join(",");
-    const r = await coba(() => kueriDasar().or(flat));
+    const r = await ambilSemua<DevotionCard>(
+      (dari, sampai) => kueriDasar().or(flat).range(dari, sampai),
+      BATAS_HASIL
+    );
     if (r.error) galatPencarian = true;
-    devotions = (r.data as DevotionCard[] | null) ?? null;
+    devotions = r.data;
   }
 
   if (cari && (devotions?.length ?? 0) === 0 && kata.length > 1) {
-    const bikinKata = () => {
+    const bikinKata = (dari: number, sampai: number) => {
       let q2 = kueriDasar();
       for (const k of kata) q2 = q2.or(grupKata(k, kolom));
-      return q2;
+      return q2.range(dari, sampai);
     };
-    const r2 = await coba(bikinKata);
+    const r2 = await ambilSemua<DevotionCard>(bikinKata, BATAS_HASIL);
     if (r2.error) galatPencarian = true;
-    devotions = (r2.data as DevotionCard[] | null) ?? null;
-    longgar = !r2.error && (devotions?.length ?? 0) > 0;
+    devotions = r2.data;
+    longgar = !r2.error && r2.data.length > 0;
   }
 
   if (!cari) {
-    const r = await coba(kueriDasar);
-    devotions = (r.data as DevotionCard[] | null) ?? null;
+    const r = await ambilSemua<DevotionCard>(
+      (dari, sampai) => kueriDasar().range(dari, sampai),
+      BATAS_HASIL
+    );
+    if (r.error) galatPencarian = true;
+    devotions = r.data;
   }
 
-  // Opsi filter: tahun-tahun yang ada + daftar tema + topik bulanan
-  const { data: allPub } = await supabase
-    .from("devotions")
-    .select("devotion_date, theme")
-    .eq("status", "published")
-    .order("devotion_date", { ascending: false })
-    .limit(500);
+  // Opsi filter: tahun-tahun yang ada + daftar tema + topik bulanan.
+  // Kueri ringan (hanya devotion_date + theme) TANPA batas 500 — dulu batas
+  // itu membuat tahun 2024 dan topik bulan 2024 tidak pernah muncul, sedang
+  // daftar 'tahun' hanya menghasilkan 2025–2026 sehingga dropdown bulan
+  // kehilangan seluruh opsi 2024.
+  const allPub = await ambilSemua<{ devotion_date: string; theme: string | null }>(
+    (dari, sampai) =>
+      supabase
+        .from("devotions")
+        .select("devotion_date, theme")
+        .eq("status", "published")
+        .order("devotion_date", { ascending: false })
+        .order("slug", { ascending: true })
+        .range(dari, sampai),
+    BATAS_RINGKAS
+  );
+  const opsi = allPub.data;
 
   const years = [
-    ...new Set((allPub ?? []).map((d) => d.devotion_date.slice(0, 4))),
+    ...new Set(opsi.map((d) => d.devotion_date.slice(0, 4))),
   ].sort((a, b) => b.localeCompare(a));
   const themeList = [
     ...new Set(
-      (allPub ?? [])
+      opsi
         .map((d) => d.theme)
         .filter((t): t is string => !!t)
     ),
@@ -127,7 +172,7 @@ export default async function ArchivePage({
 
   // Topik bulanan: tema menonjol per bulan (tema paling sering muncul)
   const bulanan = new Map<string, { label: string; theme: string | null }>();
-  for (const d of allPub ?? []) {
+  for (const d of opsi) {
     const ym = d.devotion_date.slice(0, 7);
     if (!bulanan.has(ym)) bulanan.set(ym, { label: bulanDari(ym), theme: null });
     if (d.theme && !bulanan.get(ym)!.theme) bulanan.get(ym)!.theme = d.theme;
