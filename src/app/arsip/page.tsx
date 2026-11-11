@@ -156,12 +156,22 @@ export default async function ArchivePage({
   const adaFilter = !!(sp.bulan || sp.tema || sp.cari);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
-      {/* Kepala halaman */}
-      <p className="label-kecil text-ungu">Arsip</p>
-      <h1 className="judul-rapat-sm mt-2 text-[32px] text-plum sm:text-[40px]">
-        Semua saat teduh
-      </h1>
+    <div className={`mx-auto max-w-3xl px-4 ${cari ? "py-4 sm:py-6" : "py-10 sm:py-14"}`}>
+      {/* Kepala halaman — saat mencari, tampil ringkas supaya kartu hasil
+          langsung terlihat tanpa menggulir (dulu header besar mendorong
+          kartu ke luar layar HP). */}
+      {cari ? (
+        <h1 className="judul-rapat-sm text-[20px] text-plum sm:text-[24px]">
+          Hasil pencarian “{cari}”
+        </h1>
+      ) : (
+        <>
+          <p className="label-kecil text-ungu">Arsip</p>
+          <h1 className="judul-rapat-sm mt-2 text-[32px] text-plum sm:text-[40px]">
+            Semua saat teduh
+          </h1>
+        </>
+      )}
       {!cari && (
         <p className="mt-2 max-w-xl text-[15.5px] leading-relaxed text-tinta-2">
           Cari berdasarkan topik atau ayat — mis. “jiwa”, “Matius 9”, atau “Yoh
@@ -173,7 +183,7 @@ export default async function ArchivePage({
       {/* Satu formulir untuk kata cari + bulan + tema: tombol mana pun yang
           ditekan membawa SELURUH isian, jadi kata pencarian tidak pernah hilang
           (dulu "Tampilkan" membuang ?cari). */}
-      <form method="GET" action="/arsip" className="mt-7">
+      <form method="GET" action="/arsip" className={cari ? "mt-2" : "mt-7"}>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <span
@@ -269,7 +279,7 @@ export default async function ArchivePage({
 
       {/* Ringkasan hasil pencarian */}
       {adaFilter && (
-        <p className={`${cari ? "mt-6" : "mt-8"} text-[14.5px] text-tinta-2`}>
+        <p className={`${cari ? "mt-3" : "mt-8"} text-[14.5px] text-tinta-2`}>
           <strong className="font-semibold text-tinta">
             {devotions?.length ?? 0}
           </strong>{" "}
@@ -293,7 +303,7 @@ export default async function ArchivePage({
       )}
 
       {/* Hasil, dikelompokkan per bulan dengan tema bulan */}
-      <div id="hasil" className={`${cari ? "mt-4" : "mt-6"} scroll-mt-24 space-y-10`}>
+      <div id="hasil" className={`${cari ? "mt-3" : "mt-6"} scroll-mt-24 space-y-10`}>
 
         {grup.map((g) => (
           <section key={g.ym}>
