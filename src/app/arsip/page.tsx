@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import { IkonCari } from "@/components/Ikon";
 import { DevotionCard } from "@/lib/types";
+import { KOL_CARI, grupKata, kataPencarian, polaFrasa, sanitize } from "@/lib/cari";
 
 
 export const dynamic = "force-dynamic";
@@ -19,11 +20,9 @@ const MONTHS = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
-// Bersihkan istilah pencarian dari karakter khusus sintaks PostgREST
-// (koma, kurung, bintang, %, _) supaya filter .or() tidak rusak.
-function sanitize(q: string): string {
-  return q.replace(/[%,*()_]/g, " ").replace(/\s+/g, " ").trim();
-}
+// Batas hasil per pencarian (total data terbit jauh di bawah ini;
+// dinaikkan dari 60 karena kata umum seperti "kasih" mencapai ratusan)
+const BATAS_HASIL = 800;
 
 function bulanDari(ym: string): string {
   return `${MONTHS[parseInt(ym.slice(5))]} ${ym.slice(0, 4)}`;
@@ -38,42 +37,71 @@ export default async function ArchivePage({
   const supabase = await createClient();
   const cari = sanitize(sp.cari ?? "");
 
-  let q = supabase
-    .from("devotions")
-    .select(
-      "slug, devotion_date, title, summary, theme, hearts_count"
-    )
-    .eq("status", "published")
-    .order("devotion_date", { ascending: false })
-    .limit(60);
-
-  if (sp.bulan && /^\d{4}-\d{2}$/.test(sp.bulan)) {
-    q = q.gte("devotion_date", `${sp.bulan}-01`).lt(
-      "devotion_date",
-      sp.bulan.endsWith("-12")
-        ? `${parseInt(sp.bulan.slice(0, 4)) + 1}-01-01`
-        : `${sp.bulan.slice(0, 4)}-${String(parseInt(sp.bulan.slice(5)) + 1).padStart(2, "0")}-01`
-    );
-  }
-  if (sp.tema) q = q.eq("theme", sp.tema);
-
-  // Pencarian topik & ayat: judul, ringkasan, tema, isi.
-  // Varian kedua menyisipkan spasi sebelum angka agar "matius9" tetap
-  // menemukan "Matius 9".
-  if (cari) {
-    const pats = new Set([cari]);
-    const alt = cari.replace(/(\D)(\d)/g, "$1 $2");
-    if (alt !== cari) pats.add(alt);
-    const cond = [...pats]
-      .map(
-        (p) =>
-          `title.ilike.*${p}*,summary.ilike.*${p}*,theme.ilike.*${p}*,body.ilike.*${p}*`
+  // Kueri dasar: filter bulan/tema + urut tanggal terbaru
+  const kueriDasar = () => {
+    let q = supabase
+      .from("devotions")
+      .select(
+        "slug, devotion_date, title, summary, theme, hearts_count"
       )
-      .join(",");
-    q = q.or(cond);
+      .eq("status", "published")
+      .order("devotion_date", { ascending: false })
+      .limit(BATAS_HASIL);
+
+    if (sp.bulan && /^\d{4}-\d{2}$/.test(sp.bulan)) {
+      q = q.gte("devotion_date", `${sp.bulan}-01`).lt(
+        "devotion_date",
+        sp.bulan.endsWith("-12")
+          ? `${parseInt(sp.bulan.slice(0, 4)) + 1}-01-01`
+          : `${sp.bulan.slice(0, 4)}-${String(parseInt(sp.bulan.slice(5)) + 1).padStart(2, "0")}-01`
+      );
+    }
+    if (sp.tema) q = q.eq("theme", sp.tema);
+    return q;
+  };
+
+  // Satu percobaan ulang bila permintaan gagal (mis. hiccup singkat ke
+  // Supabase) — tanpa ini pengunjung melihat "tidak ada" padahal data ada.
+  async function coba<T>(bikin: () => PromiseLike<T>): Promise<T> {
+    let r = await bikin();
+    if ((r as { error?: unknown }).error) r = await bikin();
+    return r;
   }
 
-  const { data: devotions } = await q;
+  // Pencarian dua lapis (lihat src/lib/cari.ts):
+  //  1. frasa + varian singkatan kitab & spasi angka
+  //  2. bila frasa nol hasil → semua kata harus ditemukan (di kolom mana pun)
+  const pola = cari ? polaFrasa(cari) : [];
+  const kata = cari ? kataPencarian(cari) : [];
+  let longgar = false;
+  let galatPencarian = false;
+  let devotions: DevotionCard[] | null = null;
+
+  if (cari && pola.length > 0) {
+    const flat = pola
+      .flatMap((p) => KOL_CARI.map((c) => `${c}.ilike.*${p}*`))
+      .join(",");
+    const r = await coba(() => kueriDasar().or(flat));
+    if (r.error) galatPencarian = true;
+    devotions = (r.data as DevotionCard[] | null) ?? null;
+  }
+
+  if (cari && (devotions?.length ?? 0) === 0 && kata.length > 1) {
+    const bikinKata = () => {
+      let q2 = kueriDasar();
+      for (const k of kata) q2 = q2.or(grupKata(k));
+      return q2;
+    };
+    const r2 = await coba(bikinKata);
+    if (r2.error) galatPencarian = true;
+    devotions = (r2.data as DevotionCard[] | null) ?? null;
+    longgar = !r2.error && (devotions?.length ?? 0) > 0;
+  }
+
+  if (!cari) {
+    const r = await coba(kueriDasar);
+    devotions = (r.data as DevotionCard[] | null) ?? null;
+  }
 
   // Opsi filter: tahun-tahun yang ada + daftar tema + topik bulanan
   const { data: allPub } = await supabase
@@ -135,8 +163,9 @@ export default async function ArchivePage({
         Semua saat teduh
       </h1>
       <p className="mt-2 max-w-xl text-[15.5px] leading-relaxed text-tinta-2">
-        Cari berdasarkan topik atau ayat — mis. “jiwa” atau “Matius 9” — atau
-        telusuri menurut bulan dan tema.
+        Cari berdasarkan topik atau ayat — mis. “jiwa”, “Matius 9”, atau “Yoh
+        3:16” (singkatan kitab dikenali) — atau telusuri menurut bulan dan
+        tema.
       </p>
 
       {/* Pencarian topik / ayat */}
@@ -152,7 +181,7 @@ export default async function ArchivePage({
             type="search"
             name="cari"
             defaultValue={sp.cari ?? ""}
-            placeholder="Cari topik atau ayat…"
+            placeholder="Cari topik atau ayat… (mis. “Yoh 3:16”)"
             className="min-h-12 w-full rounded-full border border-garis bg-kertas pl-11 pr-4 py-3 text-[15px] text-tinta shadow-kartu placeholder:text-tinta-3 focus:border-ungu/50 focus:outline-none"
             aria-label="Cari topik atau ayat"
           />
@@ -233,8 +262,33 @@ export default async function ArchivePage({
         </section>
       )}
 
+      {/* Ringkasan hasil pencarian */}
+      {adaFilter && (
+        <p className="mt-8 text-[14.5px] text-tinta-2">
+          <strong className="font-semibold text-tinta">
+            {devotions?.length ?? 0}
+          </strong>{" "}
+          saat teduh {cari ? "ditemukan" : "cocok"}
+          {cari && (
+            <>
+              {" "}
+              untuk pencarian “{cari}”
+            </>
+          )}
+          {(devotions?.length ?? 0) >= BATAS_HASIL && (
+            <> — batas {BATAS_HASIL} tercapai, persempit pencarian.</>
+          )}
+        </p>
+      )}
+      {longgar && (
+        <p className="mt-2 rounded-xl bg-lavender px-3.5 py-2.5 text-[13.5px] leading-relaxed text-ungu-2">
+          Hasil persis tidak ada — ini yang mendekati: kata-kata Anda
+          ditemukan terpisah di dalam teks.
+        </p>
+      )}
+
       {/* Hasil, dikelompokkan per bulan dengan tema bulan */}
-      <div className="mt-10 space-y-10">
+      <div className="mt-6 space-y-10">
         {grup.map((g) => (
           <section key={g.ym}>
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-garis pb-3">
@@ -263,7 +317,13 @@ export default async function ArchivePage({
         ))}
       </div>
 
-      {(!devotions || devotions.length === 0) && (
+      {galatPencarian && (
+        <p className="kartu mt-8 border-dashed p-10 text-center text-[15px] text-tinta-2">
+          Pencarian gagal dijalankan — server menolak permintaan. Coba lagi
+          dengan istilah yang lebih sederhana.
+        </p>
+      )}
+      {!galatPencarian && (!devotions || devotions.length === 0) && (
         <p className="kartu mt-8 border-dashed p-10 text-center text-[15px] text-tinta-2">
           Tidak ada saat teduh yang cocok
           {cari ? ` dengan kata “${cari}”` : " dengan filter ini"}.
