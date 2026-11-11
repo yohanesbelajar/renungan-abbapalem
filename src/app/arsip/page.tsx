@@ -204,39 +204,25 @@ export default async function ArchivePage({
                   ? "Cari di judul saja… (mis. “doa”)"
                   : "Cari topik atau ayat… (mis. “Yoh 3:16”)"
               }
-              className="min-h-12 w-full rounded-full border border-garis bg-kertas pl-11 pr-4 py-3 text-[15px] text-tinta shadow-kartu placeholder:text-tinta-3 focus:border-ungu/50 focus:outline-none"
+              className="min-h-12 w-full rounded-full border border-garis bg-kertas pl-11 pr-24 py-3 text-[15px] text-tinta shadow-kartu placeholder:text-tinta-3 focus:border-ungu/50 focus:outline-none"
               aria-label="Cari topik atau ayat"
             />
+            {/* Cakupan: dicentang = judul saja; tidak dicentang = judul + isi */}
+            <label className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 cursor-pointer items-center gap-1.5 rounded-full px-1.5 py-1 text-[12px] font-medium text-tinta-2 transition select-none hover:text-ungu">
+              <input
+                type="checkbox"
+                name="di"
+                value="judul"
+                defaultChecked={hanyaJudul}
+                className="h-3.5 w-3.5 accent-[#6C3483]"
+              />
+              judul saja
+            </label>
           </div>
           <button type="submit" className="btn btn-utama shrink-0 px-5">
             <IkonCari className="h-4 w-4" />
             Cari
           </button>
-        </div>
-
-        {/* Cakupan pencarian: seluruh tulisan (bawaan) atau judul saja */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1 pl-1 text-[13px]">
-          <span className="mr-1 text-tinta-3">Cari di:</span>
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-tinta-2 transition hover:text-ungu">
-            <input
-              type="radio"
-              name="di"
-              value="semua"
-              defaultChecked={!hanyaJudul}
-              className="accent-[#6C3483]"
-            />
-            semua tulisan
-          </label>
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-tinta-2 transition hover:text-ungu">
-            <input
-              type="radio"
-              name="di"
-              value="judul"
-              defaultChecked={hanyaJudul}
-              className="accent-[#6C3483]"
-            />
-            judul saja
-          </label>
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
