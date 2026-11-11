@@ -33,6 +33,23 @@ export const KOL_CARI = [
   "verse_reference",
 ];
 
+// Cakupan pencarian (pilihan pengunjung di kotak cari):
+//  "semua" = judul + ringkasan + tema + isi + ayat (bawaan, perilaku lama)
+//  "judul" = HANYA judul — tidak menyentuh isi saat teduh
+export type Cakupan = "semua" | "judul";
+
+export const CAKUPAN_BAWAAN: Cakupan = "semua";
+
+/** Baca parameter URL (?di=) menjadi cakupan yang sah. */
+export function cakupanDari(nilai: string | undefined | null): Cakupan {
+  return nilai === "judul" ? "judul" : CAKUPAN_BAWAAN;
+}
+
+/** Kolom yang ikut dicari untuk satu cakupan. */
+export function kolomCari(cakupan: Cakupan): string[] {
+  return cakupan === "judul" ? ["title"] : KOL_CARI;
+}
+
 // Kitab: kanonik + singkatan lazim (pencocokan tanpa memperhatikan huruf besar/kecil & titik)
 const KITAB: string[][] = [
   ["Kejadian", "Kej", "Gen"],
@@ -171,6 +188,6 @@ export function kataPencarian(cari: string): string[] {
 }
 
 /** Satu grup OR: kolom-kolom cocok untuk satu istilah. */
-export function grupKata(istilah: string): string {
-  return KOL_CARI.map((c) => `${c}.ilike.*${istilah}*`).join(",");
+export function grupKata(istilah: string, kolom: string[] = KOL_CARI): string {
+  return kolom.map((c) => `${c}.ilike.*${istilah}*`).join(",");
 }

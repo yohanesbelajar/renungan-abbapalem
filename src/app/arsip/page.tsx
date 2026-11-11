@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import { IkonCari } from "@/components/Ikon";
 import { DevotionCard } from "@/lib/types";
-import { KOL_CARI, grupKata, kataPencarian, polaFrasa, sanitize } from "@/lib/cari";
+import { KOL_CARI, cakupanDari, grupKata, kataPencarian, kolomCari, polaFrasa, sanitize } from "@/lib/cari";
 
 
 export const dynamic = "force-dynamic";
@@ -31,11 +31,14 @@ function bulanDari(ym: string): string {
 export default async function ArchivePage({
   searchParams,
 }: {
-  searchParams: Promise<{ bulan?: string; tema?: string; cari?: string }>;
+  searchParams: Promise<{ bulan?: string; tema?: string; cari?: string; di?: string }>;
 }) {
   const sp = await searchParams;
   const supabase = await createClient();
   const cari = sanitize(sp.cari ?? "");
+  const cakupan = cakupanDari(sp.di);
+  const kolom = kolomCari(cakupan);
+  const hanyaJudul = cakupan === "judul";
 
   // Kueri dasar: filter bulan/tema + urut tanggal terbaru
   const kueriDasar = () => {
@@ -79,7 +82,7 @@ export default async function ArchivePage({
 
   if (cari && pola.length > 0) {
     const flat = pola
-      .flatMap((p) => KOL_CARI.map((c) => `${c}.ilike.*${p}*`))
+      .flatMap((p) => kolom.map((c) => `${c}.ilike.*${p}*`))
       .join(",");
     const r = await coba(() => kueriDasar().or(flat));
     if (r.error) galatPencarian = true;
@@ -89,7 +92,7 @@ export default async function ArchivePage({
   if (cari && (devotions?.length ?? 0) === 0 && kata.length > 1) {
     const bikinKata = () => {
       let q2 = kueriDasar();
-      for (const k of kata) q2 = q2.or(grupKata(k));
+      for (const k of kata) q2 = q2.or(grupKata(k, kolom));
       return q2;
     };
     const r2 = await coba(bikinKata);
@@ -196,7 +199,11 @@ export default async function ArchivePage({
               type="search"
               name="cari"
               defaultValue={sp.cari ?? ""}
-              placeholder="Cari topik atau ayat… (mis. “Yoh 3:16”)"
+              placeholder={
+                hanyaJudul
+                  ? "Cari di judul saja… (mis. “doa”)"
+                  : "Cari topik atau ayat… (mis. “Yoh 3:16”)"
+              }
               className="min-h-12 w-full rounded-full border border-garis bg-kertas pl-11 pr-4 py-3 text-[15px] text-tinta shadow-kartu placeholder:text-tinta-3 focus:border-ungu/50 focus:outline-none"
               aria-label="Cari topik atau ayat"
             />
@@ -205,6 +212,31 @@ export default async function ArchivePage({
             <IkonCari className="h-4 w-4" />
             Cari
           </button>
+        </div>
+
+        {/* Cakupan pencarian: seluruh tulisan (bawaan) atau judul saja */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1 pl-1 text-[13px]">
+          <span className="mr-1 text-tinta-3">Cari di:</span>
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-tinta-2 transition hover:text-ungu">
+            <input
+              type="radio"
+              name="di"
+              value="semua"
+              defaultChecked={!hanyaJudul}
+              className="accent-[#6C3483]"
+            />
+            semua tulisan
+          </label>
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-tinta-2 transition hover:text-ungu">
+            <input
+              type="radio"
+              name="di"
+              value="judul"
+              defaultChecked={hanyaJudul}
+              className="accent-[#6C3483]"
+            />
+            judul saja
+          </label>
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
@@ -290,6 +322,7 @@ export default async function ArchivePage({
               untuk pencarian “{cari}”
             </>
           )}
+          {hanyaJudul && cari && <> di judul</>}
           {(devotions?.length ?? 0) >= BATAS_HASIL && (
             <> — batas {BATAS_HASIL} tercapai, persempit pencarian.</>
           )}
