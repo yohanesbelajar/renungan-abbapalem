@@ -10,10 +10,18 @@
 //
 // Semua karakter khusus sintaks PostgREST dibuang dari istilah pengguna.
 
-const KHUSUS = /[%,*()_]/g;
+// Karakter yang dibuang dari istilah pengguna: sintaks PostgREST + tanda baca
+// yang sengaja diketik pengguna (mis. “jiwa” dengan kutip → tetap cocok).
+const KHUSUS = /[%,*()_"“”‘’?!;…]/g;
 
 export function sanitize(q: string): string {
-  return q.replace(KHUSUS, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+  return q
+    .replace(KHUSUS, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[.]+|[.]+$/g, "") // titik di awal/akhir
+    .trim()
+    .slice(0, 120);
 }
 
 // Kolom yang dicari. verse_reference = ayat bacaan pada kartu.
