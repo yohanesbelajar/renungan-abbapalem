@@ -24,7 +24,7 @@ export type EdisiLengkap = {
   related: DevotionCard[];
 };
 
-const KARTU = "slug, title, devotion_date, summary, theme, hearts_count";
+const KARTU = "slug, title, devotion_date, theme, hearts_count";
 
 // Cache dibuat tingkat modul (bukan per panggilan) supaya entri benar-benar
 // dipakai ulang antar permintaan — lihat catatan di lib/arsip.ts.

@@ -5,7 +5,7 @@ import { unstable_cache } from "next/cache";
 import { anonClient } from "./supabase/anon";
 import type { DevotionCard } from "./types";
 
-const KOLOM = "slug, devotion_date, title, summary, theme, hearts_count";
+const KOLOM = "slug, devotion_date, title, theme, hearts_count";
 
 export type DataBeranda = {
   hariIni: DevotionCard | null;

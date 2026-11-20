@@ -63,7 +63,7 @@ async function kueri({ cari, cakupan, tahun, bulan, tema }: PermintaanArsip): Pr
   const dasar = () => {
     let q = db
       .from("devotions")
-      .select("slug, devotion_date, title, summary, theme, hearts_count")
+      .select("slug, devotion_date, title, theme, hearts_count")
       .eq("status", "published")
       .order("devotion_date", { ascending: false });
     if (bulan) q = q.gte("devotion_date", `${bulan}-01`).lt("devotion_date", bulanBerikut(bulan));

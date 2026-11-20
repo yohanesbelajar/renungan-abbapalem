@@ -64,7 +64,7 @@ export default async function TopikPage({
   const supabase = await createClient();
   const { data } = await supabase
     .from("devotions")
-    .select("slug, devotion_date, title, summary, theme, hearts_count")
+    .select("slug, devotion_date, title, theme, hearts_count")
     .eq("status", "published")
     .eq("theme", topik.tema)
     .order("devotion_date", { ascending: false })

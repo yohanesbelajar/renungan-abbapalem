@@ -19,7 +19,10 @@ export interface DevotionCard {
   slug: string;
   devotion_date: string;
   title: string;
-  summary: string;
+  // Ringkasan TIDAK dipakai kartu mana pun (permintaan Jo 12 Nov 2026). Kolomnya
+  // tidak diambil lagi di daftar arsip/beranda/topik — 52 KB per 1.000 baris —
+  // jadi opsional di sini. Halaman edisi tetap mengambilnya untuk meta deskripsi.
+  summary?: string;
   theme: string | null;
   hearts_count: number;
 }
