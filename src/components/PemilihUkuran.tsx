@@ -1,6 +1,7 @@
 "use client";
 
-// Pemilih ukuran huruf isi saat teduh — tiga tombol "A" (kecil / sedang / besar).
+// Pemilih ukuran huruf isi saat teduh — tiga tombol "A" (kecil / sedang / besar)
+// tanpa tulisan apa pun, diletakkan di atas isi dan sedikit menjorok ke kanan.
 // Hanya mengubah ukuran wadah isi renungan, bukan seluruh halaman. Pilihan
 // disimpan di localStorage; bawaan "sedang" = tampilan yang sudah ada.
 
@@ -33,15 +34,11 @@ export default function PemilihUkuran({
   ubah: (u: Ukuran) => void;
 }) {
   return (
-    <div className="mt-8 flex items-center justify-between gap-3 rounded-xl border border-garis bg-kertas px-3.5 py-3 shadow-[0_1px_2px_rgba(74,35,82,0.04)]">
-      <div>
-        <p className="label-kecil text-tinta-3">Pengaturan</p>
-        <p className="mt-0.5 text-[13.5px] font-semibold text-tinta">Ukuran huruf</p>
-      </div>
+    <div className="mt-7 flex justify-end pr-1 sm:pr-2">
       <div
         role="group"
         aria-label="Ukuran huruf isi saat teduh"
-        className="flex items-center gap-1.5 rounded-full bg-krem-2 p-1"
+        className="inline-flex items-center gap-0.5 rounded-full p-0.5"
       >
         {PILIHAN.map((p) => {
           const aktif = ukuran === p.nilai;
@@ -53,10 +50,10 @@ export default function PemilihUkuran({
               aria-pressed={aktif}
               aria-label={`Ukuran huruf ${p.label.toLowerCase()}`}
               title={`Ukuran huruf ${p.label.toLowerCase()}`}
-              className={`flex h-9 w-9 items-center justify-center rounded-full font-semibold leading-none transition ${
+              className={`flex h-8 w-8 items-center justify-center rounded-full leading-none transition ${
                 aktif
-                  ? "bg-ungu text-white shadow-[0_2px_6px_rgba(74,35,82,0.28)]"
-                  : "text-tinta-2 hover:bg-white hover:text-ungu"
+                  ? "bg-ungu font-semibold text-white shadow-[0_1px_3px_rgba(74,35,82,0.25)]"
+                  : "font-medium text-tinta-2 hover:bg-krem-2 hover:text-ungu"
               }`}
             >
               <span style={{ fontSize: `${p.huruf}px` }}>A</span>
