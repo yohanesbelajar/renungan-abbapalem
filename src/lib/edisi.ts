@@ -26,55 +26,59 @@ export type EdisiLengkap = {
 
 const KARTU = "slug, title, devotion_date, summary, theme, hearts_count";
 
-export async function edisiLengkap(slug: string): Promise<EdisiLengkap | null> {
-  return unstable_cache(
-    async () => {
-      const db = anonClient();
-      const { data: d } = await db
+// Cache dibuat tingkat modul (bukan per panggilan) supaya entri benar-benar
+// dipakai ulang antar permintaan — lihat catatan di lib/arsip.ts.
+const edisiCache = unstable_cache(
+  async (slug: string) => {
+    const db = anonClient();
+    const { data: d } = await db
+      .from("devotions")
+      .select("id, slug, devotion_date, title, summary, body, theme, hearts_count")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle();
+    if (!d) return null;
+
+    const [prevR, nextR, relatedR] = await Promise.all([
+      db
         .from("devotions")
-        .select("id, slug, devotion_date, title, summary, body, theme, hearts_count")
-        .eq("slug", slug)
+        .select(KARTU)
         .eq("status", "published")
-        .maybeSingle();
-      if (!d) return null;
+        .lt("devotion_date", d.devotion_date)
+        .order("devotion_date", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      db
+        .from("devotions")
+        .select(KARTU)
+        .eq("status", "published")
+        .gt("devotion_date", d.devotion_date)
+        .order("devotion_date")
+        .limit(1)
+        .maybeSingle(),
+      d.theme
+        ? db
+            .from("devotions")
+            .select(KARTU)
+            .eq("status", "published")
+            .eq("theme", d.theme)
+            .neq("id", d.id)
+            .order("devotion_date", { ascending: false })
+            .limit(3)
+        : Promise.resolve({ data: [] as DevotionCard[] }),
+    ]);
 
-      const [prevR, nextR, relatedR] = await Promise.all([
-        db
-          .from("devotions")
-          .select(KARTU)
-          .eq("status", "published")
-          .lt("devotion_date", d.devotion_date)
-          .order("devotion_date", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        db
-          .from("devotions")
-          .select(KARTU)
-          .eq("status", "published")
-          .gt("devotion_date", d.devotion_date)
-          .order("devotion_date")
-          .limit(1)
-          .maybeSingle(),
-        d.theme
-          ? db
-              .from("devotions")
-              .select(KARTU)
-              .eq("status", "published")
-              .eq("theme", d.theme)
-              .neq("id", d.id)
-              .order("devotion_date", { ascending: false })
-              .limit(3)
-          : Promise.resolve({ data: [] as DevotionCard[] }),
-      ]);
+    return {
+      d: d as Edisi,
+      prev: (prevR.data as DevotionCard | null) ?? null,
+      next: (nextR.data as DevotionCard | null) ?? null,
+      related: (relatedR.data as DevotionCard[] | null) ?? [],
+    };
+  },
+  ["edisi"],
+  { revalidate: 300, tags: ["devotions"] }
+);
 
-      return {
-        d: d as Edisi,
-        prev: (prevR.data as DevotionCard | null) ?? null,
-        next: (nextR.data as DevotionCard | null) ?? null,
-        related: (relatedR.data as DevotionCard[] | null) ?? [],
-      };
-    },
-    ["edisi", slug],
-    { revalidate: 300, tags: ["devotions"] }
-  )();
+export async function edisiLengkap(slug: string): Promise<EdisiLengkap | null> {
+  return edisiCache(slug);
 }

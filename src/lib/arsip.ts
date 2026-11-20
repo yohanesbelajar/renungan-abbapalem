@@ -118,11 +118,15 @@ async function kueri({ cari, cakupan, tahun, bulan, tema }: PermintaanArsip): Pr
 }
 
 /** Kartu arsip, di-cache 5 menit per kombinasi filter (tag "devotions"). */
+// Fungsi cache dibuat di tingkat modul, BUKAN di dalam handler: membuat
+// unstable_cache baru pada setiap permintaan membuat entri cache tidak pernah
+// dipakai ulang di Vercel (terukur: pencarian "doa" tetap 19–24 s tiap kali).
+const kueriCache = unstable_cache(kueri, ["arsip"], {
+  revalidate: 300,
+  tags: ["devotions"],
+});
+
 export async function kartuArsip(p: PermintaanArsip): Promise<HasilArsip> {
   if (!p.cari && !p.bulan && !p.tema) return { devotions: [], longgar: false, galat: false };
-  return unstable_cache(
-    () => kueri(p),
-    ["arsip", p.cari, p.cakupan, p.tahun, p.bulan, p.tema],
-    { revalidate: 300, tags: ["devotions"] }
-  )();
+  return kueriCache(p);
 }
