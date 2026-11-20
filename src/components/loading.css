@@ -7,61 +7,98 @@
   z-index: 120;
   display: grid;
   place-items: center;
-  background: radial-gradient(120% 90% at 50% 0%, #33293f 0%, #171420 55%, #100e15 100%);
-  animation: splash-out 0.4s ease 0.8s forwards;
+  background:
+    radial-gradient(
+      46% 36% at 50% 50%,
+      rgba(154, 75, 158, 0.32) 0%,
+      rgba(154, 75, 158, 0.12) 45%,
+      rgba(0, 0, 0, 0) 72%
+    ),
+    #050409;
+  animation: splash-out 0.45s ease 1.05s forwards;
 }
 
 .splash-inner {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 18px;
+  justify-content: center;
+}
+
+.splash-tanda {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(56vw, 320px);
+  aspect-ratio: 1;
+  animation: splash-datang 0.6s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/* Cahaya ungu lembut di belakang ikon — bernapas pelan. */
+.splash-halo {
+  position: absolute;
+  inset: -24%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(154, 75, 158, 0.42) 0%,
+    rgba(154, 75, 158, 0.18) 42%,
+    rgba(154, 75, 158, 0) 68%
+  );
+  filter: blur(8px);
+  animation: splash-halo 2.6s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
 .splash-logo {
-  width: 132px;
+  position: relative;
+  width: 100%;
   height: auto;
-  border-radius: 999px;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  filter: drop-shadow(0 16px 40px rgba(154, 75, 158, 0.38));
 }
 
-.splash-nama {
-  margin: 2px 0 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 22px;
-  letter-spacing: 0.01em;
-  color: #ffffff;
+/* Cincin tipis berputar: ekor ungu memudar, ujung keemasan. */
+.splash-cincin {
+  position: absolute;
+  inset: -13px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0) 0deg,
+    rgba(196, 148, 255, 0.55) 150deg,
+    rgba(232, 174, 96, 0.9) 330deg,
+    rgba(255, 255, 255, 0) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 1.6px), #000 calc(100% - 1.5px));
+  mask: radial-gradient(farthest-side, #0000 calc(100% - 1.6px), #000 calc(100% - 1.5px));
+  animation: splash-putar 1.6s linear infinite;
+  pointer-events: none;
 }
 
-.splash-bar {
-  width: 168px;
-  height: 3px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.splash-bar span {
-  display: block;
-  height: 100%;
-  width: 45%;
-  border-radius: 999px;
-  background: #e01b22;
-  animation: splash-bar 1s ease-in-out infinite;
-}
-
-.splash-text {
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-@keyframes splash-bar {
-  0% {
-    transform: translateX(-110%);
+@keyframes splash-datang {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
   }
-  100% {
-    transform: translateX(240%);
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes splash-halo {
+  from {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes splash-putar {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -146,9 +183,6 @@
   .saat-loading-card img {
     width: 68px;
   }
-  .splash-logo {
-    width: 118px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -156,8 +190,15 @@
     animation-duration: 0.2s;
     animation-delay: 0.3s;
   }
-  .splash-bar span {
-    animation-duration: 2.4s;
+  .splash-logo {
+    animation: none;
+  }
+  .splash-tanda {
+    animation: none;
+  }
+  .splash-halo,
+  .splash-cincin {
+    animation: none;
   }
   .saat-loading-spinner {
     animation-duration: 2s;

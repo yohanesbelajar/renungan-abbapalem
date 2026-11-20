@@ -47,20 +47,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Splash pembuka — HTML murni + CSS, hilang sendiri walau JS gagal */}
         <div className="splash" aria-hidden="true">
           <div className="splash-inner">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo-palem.png"
-              alt=""
-              width={140}
-              height={140}
-              className="splash-logo"
-              fetchPriority="high"
-            />
-            <p className="splash-nama">Abbalove Palem</p>
-            <div className="splash-bar">
-              <span />
+            <div className="splash-tanda">
+              <span className="splash-halo" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-palem.png"
+                alt=""
+                width={320}
+                height={320}
+                className="splash-logo"
+                fetchPriority="high"
+              />
+              <span className="splash-cincin" />
             </div>
-            <p className="splash-text">Saat Teduh</p>
           </div>
         </div>
 
