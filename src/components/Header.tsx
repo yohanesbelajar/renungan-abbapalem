@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import MenuMobile from "./MenuMobile";
+import TombolTema from "./TombolTema";
 
 export default async function Header() {
   const supabase = await createClient();
@@ -47,6 +48,12 @@ export default async function Header() {
             Arsip
           </Link>
           <Link
+            href="/topik"
+            className="hidden min-h-11 items-center rounded-full px-3 text-tinta-2 transition hover:bg-lavender hover:text-plum sm:inline-flex"
+          >
+            Topik
+          </Link>
+          <Link
             href="/tentang"
             className="hidden min-h-11 items-center rounded-full px-3 text-tinta-2 transition hover:bg-lavender hover:text-plum sm:inline-flex"
           >
@@ -60,6 +67,7 @@ export default async function Header() {
               Admin
             </Link>
           )}
+          <TombolTema className="hidden sm:inline-flex" />
           <Link
             href={user ? "/profil" : "/masuk"}
             className="btn btn-utama btn-sm ml-1"

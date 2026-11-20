@@ -1,6 +1,7 @@
 // Penerbitan terjadwal: ubah status 'scheduled' menjadi 'published'
 // saat waktunya tiba. Dipasang di Vercel Cron (berjalan tiap menit).
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 
@@ -25,6 +26,15 @@ async function publishDue() {
       .from("devotions")
       .update({ status: "published", published_at: now })
       .eq("id", d.id);
+  }
+  // Edisi baru terbit → segarkan cache publik (sitemap, topik, beranda, arsip)
+  // tanpa menunggu masa revalidate.
+  if ((due?.length ?? 0) > 0) {
+    try {
+      revalidateTag("devotions", "max");
+    } catch {
+      // Di luar konteks cache (mis. dijalankan lokal) — abaikan.
+    }
   }
   return NextResponse.json({ published: due?.length ?? 0 });
 }

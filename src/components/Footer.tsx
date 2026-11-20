@@ -3,7 +3,7 @@ import { SITE_NAME, VALUE_STATEMENT } from "@/lib/constants";
 
 export default function Footer() {
   return (
-    <footer className="mt-20 border-t border-garis-tipis bg-[linear-gradient(180deg,#f8f2e9_0%,#f3ecf8_100%)]">
+    <footer className="kaki-pendar mt-20 border-t border-garis-tipis bg-[linear-gradient(180deg,#f8f2e9_0%,#f3ecf8_100%)]">
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm">

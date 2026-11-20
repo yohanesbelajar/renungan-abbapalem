@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import { IkonBuku, IkonPanah } from "@/components/Ikon";
 import { todayJakarta, formatTanggalID } from "@/lib/dates";
 import { SITE_NAME, VALUE_STATEMENT } from "@/lib/constants";
+import { dataBeranda } from "@/lib/beranda";
+import { semuaTerbit } from "@/lib/publik";
+import { kelompokTema } from "@/lib/topik";
 
-export const dynamic = "force-dynamic";
+// Beranda kini memakai data ter-cache (lib/beranda.ts). Dulu force-dynamic:
+// tiap kunjungan menembak Supabase tiga kali, TTFB 1,24 s.
+export const revalidate = 300;
 
 const BULAN_PANJANG = [
   "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -13,36 +17,14 @@ const BULAN_PANJANG = [
 ];
 
 export default async function HomePage() {
-  const supabase = await createClient();
   const today = todayJakarta();
+  const [{ hariIni, terbaru, arsip }, topik] = await Promise.all([
+    dataBeranda(today),
+    semuaTerbit().then((baris) => kelompokTema(baris).slice(0, 6)),
+  ]);
 
-  const { data: todayDevotion } = await supabase
-    .from("devotions")
-    .select("slug, devotion_date, title, summary, theme, hearts_count")
-    .eq("status", "published")
-    .eq("devotion_date", today)
-    .maybeSingle();
-
-  let latest: (typeof todayDevotion)[] = [];
-  if (!todayDevotion) {
-    const { data } = await supabase
-      .from("devotions")
-      .select("slug, devotion_date, title, summary, theme, hearts_count")
-      .eq("status", "published")
-      .order("devotion_date", { ascending: false })
-      .limit(1);
-    latest = data ?? [];
-  }
-
-  const { data: archive } = await supabase
-    .from("devotions")
-    .select("slug, devotion_date, title, summary, theme, hearts_count")
-    .eq("status", "published")
-    .neq("devotion_date", today)
-    .order("devotion_date", { ascending: false })
-    .limit(6);
-
-  const featured = todayDevotion ?? latest[0] ?? null;
+  const archive = arsip;
+  const featured = hariIni ?? terbaru ?? null;
   // Label bulan mengikuti edisi terbaru yang benar-benar terbit, bukan tanggal hari ini
   const acuan = featured?.devotion_date ?? archive?.[0]?.devotion_date ?? today;
   const bulanIni = `${BULAN_PANJANG[Number(acuan.slice(5, 7))]} ${acuan.slice(0, 4)}`;
@@ -55,7 +37,7 @@ export default async function HomePage() {
       <section className="relative overflow-hidden border-b border-garis-tipis">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_75%_at_10%_-8%,#efe2f7_0%,rgba(253,249,243,0)_62%),radial-gradient(72%_65%_at_90%_-2%,#fbe4c4_0%,rgba(253,249,243,0)_64%)]"
+          className="hero-pendar pointer-events-none absolute inset-0 bg-[radial-gradient(90%_75%_at_10%_-8%,#efe2f7_0%,rgba(253,249,243,0)_62%),radial-gradient(72%_65%_at_90%_-2%,#fbe4c4_0%,rgba(253,249,243,0)_64%)]"
         />
         <div
           aria-hidden
@@ -121,7 +103,7 @@ export default async function HomePage() {
                 className="group mx-auto mt-8 inline-flex max-w-2xl flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 text-[14px] text-tinta-2 transition hover:text-plum"
               >
                 <span className="label-kecil rounded-full bg-senja/15 px-2 py-1 text-[#7a4a10]">
-                  {todayDevotion ? "Hari ini" : "Terbaru"}
+                  {hariIni ? "Hari ini" : "Terbaru"}
                 </span>
                 <span>{formatTanggalID(featured.devotion_date)}</span>
                 {featured.theme && (
@@ -171,6 +153,34 @@ export default async function HomePage() {
           <p className="kartu mt-8 p-8 text-center text-[15px] text-tinta-2">
             Arsip masih kosong. Saat Teduh yang diterbitkan akan tampil di sini.
           </p>
+        )}
+
+        {/* Pintu masuk per topik — jalur cepat ke tema bulanan, sekaligus
+            jalur masuk dari mesin pencari (halaman /topik diindeks). */}
+        {topik.length > 0 && (
+          <div className="mt-12 border-t border-garis-tipis pt-7">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h3 className="judul-rapat-sm text-[17px] text-plum">Jelajahi menurut topik</h3>
+              <Link
+                href="/topik"
+                className="text-[13.5px] font-semibold text-ungu hover:underline"
+              >
+                Semua topik
+              </Link>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {topik.map((t) => (
+                <Link
+                  key={t.slug}
+                  href={`/topik/${t.slug}`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-garis bg-kertas px-3 py-1.5 text-[13px] font-semibold text-ungu-2 transition hover:border-ungu/40 hover:bg-lavender"
+                >
+                  {t.tema}
+                  <span className="text-[11.5px] font-medium text-tinta-3">{t.n}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
       </section>
     </div>

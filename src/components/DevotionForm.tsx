@@ -226,6 +226,10 @@ export default function DevotionForm({
     }
 
     setBusy(false);
+    // Segarkan cache publik (sitemap, halaman topik, ringkasan arsip) supaya
+    // edisi yang baru disimpan langsung ikut terdaftar. Kegagalan di sini tidak
+    // boleh membatalkan penyimpanan yang sudah berhasil.
+    fetch("/api/segar", { method: "POST" }).catch(() => {});
     router.push("/admin/saat-teduh");
     router.refresh();
   }

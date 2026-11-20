@@ -99,7 +99,7 @@ export default function IsiTeduh({ isi }: { isi: string }) {
         ref={wadah}
         data-ukuran={ukuran}
         data-siap={siap ? "ya" : "belum"}
-        className="isi-teduh mt-5 space-y-4 leading-[1.85] text-[#121212]"
+        className="isi-teduh mt-5 space-y-4 leading-[1.85] text-tinta"
         style={{ "--ukuran-isi": HURUF[ukuran] } as React.CSSProperties}
       >
         {blok.map((b, i) => (

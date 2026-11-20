@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import DevotionActions from "@/components/DevotionActions";
 import IsiTeduh from "@/components/IsiTeduh";
+import { edisiLengkap } from "@/lib/edisi";
 import type { DevotionCard } from "@/lib/types";
 
 const BULAN_ID = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -22,7 +23,6 @@ function tanggalPanjang(iso: string): string {
 
 
 export const dynamic = "force-dynamic";
-
 export async function generateMetadata({
   params,
 }: {
@@ -32,15 +32,24 @@ export async function generateMetadata({
   const supabase = await createClient();
   const { data } = await supabase
     .from("devotions")
-    .select("title, summary")
+    .select("title, summary, devotion_date, theme")
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
   if (!data) return {};
+  const url = `/saat-teduh/${slug}`;
   return {
     title: data.title,
     description: data.summary || undefined,
-    openGraph: { title: data.title, description: data.summary || undefined },
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: data.title,
+      description: data.summary || undefined,
+      publishedTime: `${data.devotion_date}T00:05:00+07:00`,
+    },
+    twitter: { card: "summary_large_image", title: data.title, description: data.summary || undefined },
   };
 }
 
@@ -50,49 +59,12 @@ export default async function DevotionPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const lengkap = await edisiLengkap(slug);
+  if (!lengkap) notFound();
+  const { d, prev, next, related } = lengkap;
+
+  // Bagian pribadi (heart/selesai) tetap dibaca langsung dari sesi pengunjung.
   const supabase = await createClient();
-
-  const { data: d } = await supabase
-    .from("devotions")
-    .select(
-      "id, slug, devotion_date, title, summary, body, theme, hearts_count"
-    )
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle();
-
-  if (!d) notFound();
-
-  const { data: prev } = await supabase
-    .from("devotions")
-    .select("slug, title, devotion_date, summary, theme, hearts_count")
-    .eq("status", "published")
-    .lt("devotion_date", d.devotion_date)
-    .order("devotion_date", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const { data: next } = await supabase
-    .from("devotions")
-    .select("slug, title, devotion_date, summary, theme, hearts_count")
-    .eq("status", "published")
-    .gt("devotion_date", d.devotion_date)
-    .order("devotion_date")
-    .limit(1)
-    .maybeSingle();
-
-  const { data: related } = d.theme
-    ? await supabase
-        .from("devotions")
-        .select("slug, title, devotion_date, summary, theme, hearts_count")
-        .eq("status", "published")
-        .eq("theme", d.theme)
-        .neq("id", d.id)
-        .order("devotion_date", { ascending: false })
-        .limit(3)
-    : { data: [] };
-
-  // Status heart/selesai pengguna login
   const {
     data: { user },
   } = await supabase.auth.getUser();

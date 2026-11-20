@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import TombolTema from "./TombolTema";
 
 // Menu tambahan khusus layar HP (< sm), tempat tautan "Tentang"/"Admin"
 // disembunyikan dari bilah atas karena ruang tidak cukup.
@@ -66,6 +67,16 @@ export default function MenuMobile({ isStaff }: { isStaff: boolean }) {
             className="flex min-h-11 items-center rounded-xl px-3 text-[14px] font-medium text-tinta-2 transition hover:bg-lavender hover:text-plum"
           >
             Arsip
+          </Link>
+          <div className="flex items-center justify-between gap-2 rounded-xl px-1">
+            <span className="pl-2 text-[14px] font-medium text-tinta-2">Tema tampilan</span>
+            <TombolTema />
+          </div>
+          <Link
+            href="/topik"
+            className="flex min-h-11 items-center rounded-xl px-3 text-[14px] font-medium text-tinta-2 transition hover:bg-lavender hover:text-plum"
+          >
+            Topik
           </Link>
           <Link
             href="/tentang"

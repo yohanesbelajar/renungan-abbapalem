@@ -47,6 +47,178 @@
     0 2px 4px rgba(53, 22, 58, 0.18), 0 12px 24px -12px rgba(53, 22, 58, 0.5);
 }
 
+/* ========== Mode gelap ==================================================
+   Dua pemicu: setelan sistem (prefers-color-scheme) dan pilihan manual yang
+   disimpan di localStorage ("sate-tema" = gelap | terang). Pilihan manual
+   dipasang sebagai data-tema pada <html> oleh skrip di layout (sebelum cat
+   pertama, jadi tidak ada kedipan), dan menimpa setelan sistem.
+   Token remang dinaikkan agar kontras AA terjaga di atas latar gelap. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="terang"]) {
+    --color-cream: #121016;
+    --color-kertas: #1b1720;
+    --color-krem-2: #171420;
+    --color-krem-3: #221d2e;
+    --color-lavender: #271f31;
+    --color-tinta: #ece7f0;
+    --color-tinta-2: #bdb6c6;
+    --color-tinta-3: #a098ab;
+    --color-garis: rgba(236, 231, 240, 0.14);
+    --color-garis-tipis: rgba(236, 231, 240, 0.09);
+    --color-ungu: #c07ad0;
+    --color-ungu-2: #d7a4e0;
+    --color-plum: #eed9f3;
+    --color-plum-2: #f6eaf8;
+    --color-ungu-lembut: #2a2033;
+    --color-jingga: #f0b083;
+    --color-senja: #f0a83c;
+    --color-senja-muda: #f7c274;
+  }
+}
+:root[data-tema="gelap"] {
+  --color-cream: #121016;
+  --color-kertas: #1b1720;
+  --color-krem-2: #171420;
+  --color-krem-3: #221d2e;
+  --color-lavender: #271f31;
+  --color-tinta: #ece7f0;
+  --color-tinta-2: #bdb6c6;
+  --color-tinta-3: #a098ab;
+  --color-garis: rgba(236, 231, 240, 0.14);
+  --color-garis-tipis: rgba(236, 231, 240, 0.09);
+  --color-ungu: #c07ad0;
+  --color-ungu-2: #d7a4e0;
+  --color-plum: #eed9f3;
+  --color-plum-2: #f6eaf8;
+  --color-ungu-lembut: #2a2033;
+  --color-jingga: #f0b083;
+  --color-senja: #f0a83c;
+  --color-senja-muda: #f7c274;
+}
+/* Latar gradasi & kartu yang ditulis langsung (bukan lewat token) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="terang"]) body {
+    background: #121016;
+  }
+  :root:not([data-tema="terang"]) .hero-pendar {
+    background: radial-gradient(90% 75% at 10% -8%, #2a1c34 0%, rgba(18, 16, 22, 0) 62%),
+      radial-gradient(72% 65% at 90% -2%, #33241a 0%, rgba(18, 16, 22, 0) 64%) !important;
+  }
+  :root:not([data-tema="terang"]) .kaki-pendar {
+    background: linear-gradient(180deg, #171420 0%, #221d2e 100%) !important;
+  }
+  :root:not([data-tema="terang"]) .btn-sekunder {
+    background: #221d2e;
+    color: var(--color-plum);
+  }
+  :root:not([data-tema="terang"]) .kartu {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -16px rgba(0, 0, 0, 0.6);
+  }
+}
+:root[data-tema="gelap"] body {
+  background: #121016;
+}
+:root[data-tema="gelap"] .hero-pendar {
+  background: radial-gradient(90% 75% at 10% -8%, #2a1c34 0%, rgba(18, 16, 22, 0) 62%),
+    radial-gradient(72% 65% at 90% -2%, #33241a 0%, rgba(18, 16, 22, 0) 64%) !important;
+}
+:root[data-tema="gelap"] .kaki-pendar {
+  background: linear-gradient(180deg, #171420 0%, #221d2e 100%) !important;
+}
+:root[data-tema="gelap"] .btn-sekunder {
+  background: #221d2e;
+  color: var(--color-plum);
+}
+:root[data-tema="gelap"] .kartu {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 28px -16px rgba(0, 0, 0, 0.6);
+}
+/* Kartu di mode gelap perlu dipisahkan dari latar: selisih #1b1720 vs #121016
+   terlalu tipis dan garis 0.14 hampir tak terlihat di layar redup. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="terang"]) .kartu {
+    background: #1e1a26;
+    border-color: rgba(236, 231, 240, 0.17);
+  }
+}
+:root[data-tema="gelap"] .kartu {
+  background: #1e1a26;
+  border-color: rgba(236, 231, 240, 0.17);
+}
+
+/* Halaman lama (profil, panel admin) masih memakai kelas Tailwind slate.
+   Di mode gelap kelas itu dipetakan ke token tema supaya teks tidak hitam
+   di atas latar gelap. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="terang"]) .text-slate-900,
+  :root:not([data-tema="terang"]) .text-slate-800,
+  :root:not([data-tema="terang"]) .text-slate-700 {
+    color: var(--color-tinta);
+  }
+  :root:not([data-tema="terang"]) .text-slate-600,
+  :root:not([data-tema="terang"]) .text-slate-500 {
+    color: var(--color-tinta-2);
+  }
+  :root:not([data-tema="terang"]) .border-slate-200 {
+    border-color: var(--color-garis);
+  }
+  :root:not([data-tema="terang"]) .bg-slate-100 {
+    background: var(--color-krem-3);
+  }
+}
+:root[data-tema="gelap"] .text-slate-900,
+:root[data-tema="gelap"] .text-slate-800,
+:root[data-tema="gelap"] .text-slate-700 {
+  color: var(--color-tinta);
+}
+:root[data-tema="gelap"] .text-slate-600,
+:root[data-tema="gelap"] .text-slate-500 {
+  color: var(--color-tinta-2);
+}
+:root[data-tema="gelap"] .border-slate-200 {
+  border-color: var(--color-garis);
+}
+:root[data-tema="gelap"] .bg-slate-100 {
+  background: var(--color-krem-3);
+}
+
+/* Warna teks inline dari bahan PDF (disimpan editor sebagai style="color:#…").
+   Sebagian warnanya gelap total — #000, #0000ff, #950095 — dan hanya terbaca
+   di atas kertas terang. Di mode gelap warnanya dipetakan ke versi terang;
+   warna yang sudah cukup terang (#ff0066, #fff) dibiarkan apa adanya.
+   Daftar diambil dari sampel 30 edisi lintas tahun (20 Nov 2026). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color:#000"],
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color:#0000ff"],
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color: rgb(0, 0, 0)"],
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color:#1a34c8"],
+  :root:not([data-tema="terang"]) .blok-label h2,
+  :root:not([data-tema="terang"]) .blok-label h3 {
+    color: #a9c2ff !important;
+  }
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color:#950095"],
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color:#990099"],
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color:#cc0099"],
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color:#ff0000"],
+  :root:not([data-tema="terang"]) .isi-teduh [style*="color:#ff3399"] {
+    color: #f5a8d4 !important;
+  }
+}
+:root[data-tema="gelap"] .isi-teduh [style*="color:#000"],
+:root[data-tema="gelap"] .isi-teduh [style*="color:#0000ff"],
+:root[data-tema="gelap"] .isi-teduh [style*="color: rgb(0, 0, 0)"],
+:root[data-tema="gelap"] .isi-teduh [style*="color:#1a34c8"],
+:root[data-tema="gelap"] .blok-label h2,
+:root[data-tema="gelap"] .blok-label h3 {
+  color: #a9c2ff !important;
+}
+:root[data-tema="gelap"] .isi-teduh [style*="color:#950095"],
+:root[data-tema="gelap"] .isi-teduh [style*="color:#990099"],
+:root[data-tema="gelap"] .isi-teduh [style*="color:#cc0099"],
+:root[data-tema="gelap"] .isi-teduh [style*="color:#ff0000"],
+:root[data-tema="gelap"] .isi-teduh [style*="color:#ff3399"] {
+  color: #f5a8d4 !important;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;

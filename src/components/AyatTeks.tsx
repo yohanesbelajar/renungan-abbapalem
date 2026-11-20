@@ -16,6 +16,7 @@ import {
   parseRujukan,
   tampilkanRujukan,
   type AyatTerpilih,
+  type Kitab,
   type Rujukan,
 } from "@/lib/ayat";
 
@@ -119,6 +120,9 @@ export function PopupAyat({
   const [galat, setGalat] = useState<string | null>(null);
   const [tersalin, setTersalin] = useState(false);
   const [adaLanjutan, setAdaLanjutan] = useState(false);
+  const [kitab, setKitab] = useState<Kitab | null>(null);
+  // Pasal yang sedang ditampilkan. null = tampilkan rujukan saja (perilaku lama).
+  const [pasalPenuh, setPasalPenuh] = useState<number | null>(null);
   const judul = rujukan ? tampilkanRujukan(rujukan) : (cadangan?.rujukan ?? "Ayat");
   const teksCadangan = !rujukan && cadangan?.teks ? cadangan.teks : null;
   const refPanel = useRef<HTMLDivElement>(null);
@@ -144,9 +148,10 @@ export function PopupAyat({
     let batal = false;
     if (!rujukan) return;
     muatKitab(rujukan.kode)
-      .then((kitab) => {
+      .then((k) => {
         if (batal) return;
-        const hasil = kumpulAyat(kitab, rujukan);
+        setKitab(k);
+        const hasil = kumpulAyat(k, rujukan);
         if (hasil.length === 0) throw new Error("ayat tidak ditemukan");
         setAyat(hasil);
       })
@@ -157,6 +162,26 @@ export function PopupAyat({
       batal = true;
     };
   }, [rujukan]);
+
+  // Ayat yang ditampilkan: pasal penuh (bila dipilih) atau rujukan aslinya.
+  const tampil: AyatTerpilih[] | null = pasalPenuh && kitab
+    ? (kitab.pasal[pasalPenuh - 1] ?? []).map((teks, i) => ({
+        pasal: pasalPenuh,
+        ayat: i + 1,
+        teks,
+      }))
+    : ayat;
+
+  const jumlahPasal = kitab?.pasal.length ?? 0;
+  const ayatSorot =
+    rujukan && pasalPenuh !== null && pasalPenuh === rujukan.awal.pasal
+      ? { dari: rujukan.awal.ayat ?? 1, sampai: rujukan.akhir?.pasal === rujukan.awal.pasal ? (rujukan.akhir.ayat ?? 999) : 999 }
+      : null;
+
+  // Pindah pasal: gulir kembali ke atas supaya ayat 1 terlihat.
+  useEffect(() => {
+    if (pasalPenuh !== null && refIsi.current) refIsi.current.scrollTop = 0;
+  }, [pasalPenuh]);
 
   useEffect(() => {
     const sebelumnya = document.body.style.overflow;
@@ -173,11 +198,11 @@ export function PopupAyat({
   }, [tutup]);
 
   const salin = async () => {
-    const isi = ayat
-      ? ayat
+    const isi = tampil
+      ? tampil
           .map(
             (a, i) =>
-              (i === 0 || ayat[i - 1].pasal !== a.pasal ? `${a.pasal}:` : "") +
+              (i === 0 || tampil[i - 1].pasal !== a.pasal ? `${a.pasal}:` : "") +
               `${a.ayat} ${a.teks}`,
           )
           .join(" ")
@@ -265,17 +290,19 @@ export function PopupAyat({
               <span className="rounded bg-ungu-lembut px-1 py-0.5">{teksCadangan}</span>
             </p>
           )}
-          {ayat && (
+          {tampil && (
             <p>
-              {ayat.map((a, i) => {
-                const awalPasal = i === 0 || ayat[i - 1].pasal !== a.pasal;
+              {tampil.map((a, i) => {
+                const awalPasal = i === 0 || tampil[i - 1].pasal !== a.pasal;
                 const nomor = (awalPasal ? `${a.pasal}:` : "") + `${a.ayat}`;
+                const sorot =
+                  ayatSorot !== null && a.ayat >= ayatSorot.dari && a.ayat <= ayatSorot.sampai;
                 return (
                   <span key={`${a.pasal}:${a.ayat}`}>
                     {i > 0 && " "}
                     <span
                       className={
-                        i === 0 ? "rounded bg-ungu-lembut px-1 py-0.5" : undefined
+                        sorot ? "rounded bg-ungu-lembut px-1 py-0.5" : undefined
                       }
                     >
                       <sup className="mr-0.5 text-[0.7em] font-semibold text-ungu">
@@ -288,20 +315,62 @@ export function PopupAyat({
               })}
             </p>
           )}
+
+          {/* Pindah pasal — hanya bila kitab sudah dimuat */}
+          {kitab && pasalPenuh !== null && (
+            <div className="mt-5 flex items-center justify-between gap-2 border-t border-garis pt-3">
+              <button
+                type="button"
+                onClick={() => setPasalPenuh((p) => Math.max(1, (p ?? 1) - 1))}
+                disabled={pasalPenuh <= 1}
+                className="min-h-9 rounded-full px-3 text-[13px] font-medium text-tinta-2 transition enabled:hover:bg-lavender enabled:hover:text-plum disabled:opacity-40"
+              >
+                ← Pasal {pasalPenuh - 1}
+              </button>
+              <span className="text-[12px] text-tinta-3">
+                {pasalPenuh} / {jumlahPasal}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setPasalPenuh((p) => Math.min(jumlahPasal, (p ?? 1) + 1))
+                }
+                disabled={pasalPenuh >= jumlahPasal}
+                className="min-h-9 rounded-full px-3 text-[13px] font-medium text-tinta-2 transition enabled:hover:bg-lavender enabled:hover:text-plum disabled:opacity-40"
+              >
+                Pasal {pasalPenuh + 1} →
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Kaki tetap: kredit LAI selalu terlihat walau isi digulir */}
         <div className="flex items-center justify-between gap-3 border-t border-garis bg-krem-2 px-5 py-2.5">
           <span className="text-[11px] text-tinta-3">{LAI_CREDIT}</span>
-          {adaLanjutan ? (
-            <span aria-hidden className="shrink-0 text-[11px] font-medium text-ungu">
-              ↓ Gulir untuk lanjut
-            </span>
-          ) : (
-            <span className="hidden shrink-0 text-[11px] text-tinta-3 [@media(hover:hover)]:inline">
-              Esc untuk menutup
-            </span>
-          )}
+          <div className="flex shrink-0 items-center gap-3">
+            {rujukan && kitab && (
+              <button
+                type="button"
+                onClick={() =>
+                  setPasalPenuh((p) => (p === null ? rujukan.awal.pasal : null))
+                }
+                className="rounded-full px-2 py-1 text-[11px] font-semibold text-ungu transition hover:bg-white/70"
+              >
+                {pasalPenuh === null
+                  ? `Baca pasal ${rujukan.awal.pasal} penuh`
+                  : "Kembali ke ayat"}
+              </button>
+            )}
+            {adaLanjutan ? (
+              <span aria-hidden className="text-[11px] font-medium text-ungu">
+                ↓ Gulir
+              </span>
+            ) : (
+              <span className="hidden text-[11px] text-tinta-3 [@media(hover:hover)]:inline">
+                Esc untuk menutup
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>,

@@ -1,67 +1,35 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import { IkonCari } from "@/components/Ikon";
 import { DevotionCard } from "@/lib/types";
-import { cakupanDari, grupKata, kataPencarian, kolomCari, polaFrasa, sanitize } from "@/lib/cari";
+import { cakupanDari, sanitize } from "@/lib/cari";
+import { BATAS_HASIL, kartuArsip } from "@/lib/arsip";
+import { semuaRingkas } from "@/lib/publik";
 
-
-export const dynamic = "force-dynamic";
+// Data kartu & daftar tahun/bulan di-cache (lib/arsip.ts, lib/publik.ts).
+// Halaman ini tidak lagi force-dynamic: dulu setiap kunjungan menembak
+// Supabase ±2.000 baris (TTFB 1,1–1,2 s). Cache disegarkan /api/segar saat
+// admin menyimpan atau cron menerbitkan edisi baru.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Arsip Saat Teduh",
   description:
     "Cari saat teduh berdasarkan topik, ayat, bulan, atau tema — arsip harian Abbalove Palem.",
+  alternates: { canonical: "/arsip" },
+  openGraph: {
+    url: "/arsip",
+    title: "Arsip Saat Teduh — Abbalove Palem",
+    description:
+      "Cari saat teduh berdasarkan topik, ayat, bulan, atau tema — arsip harian Abbalove Palem.",
+  },
 };
 
 const MONTHS = [
   "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
-
-// Batas hasil per halaman arsip/pencarian. Dinaikkan dari 60 (kata umum
-// seperti "kasih" mencapai ratusan) lalu dari 800 (total published sudah
-// 1.030 baris, sehingga arsip 2024 Jan–Agu tidak pernah tampil).
-const BATAS_HASIL = 1200;
-
-// PostgREST membatasi maksimum 1.000 baris per permintaan (limit yang lebih
-// besar tetap dipotong 1.000 tanpa galat), jadi setiap kueri diambil per
-// halaman lalu disambung.
-const HALAMAN = 1000;
-
-// Batas aman query ringan (devotion_date + theme) — dipakai untuk daftar
-// tahun/bulan, daftar tema, dan tema tiap bulan. Harus mencakup SEMUA baris
-// published, bukan 500 terbaru seperti sebelumnya.
-const BATAS_RINGKAS = 20000;
-
-// Satu bulan paling banyak 31 baris, jadi satu permintaan (maks 1.000) cukup.
-const BATAS_BULAN = 1000;
-
-type Hasil<T> = { data: T[] | null; error?: unknown };
-
-// Ambil semua baris dengan penyambungan halaman + satu percobaan ulang per
-// halaman bila permintaan gagal (mis. hiccup singkat ke Supabase).
-async function ambilSemua<T>(
-  bikin: (dari: number, sampai: number) => PromiseLike<Hasil<T>>,
-  batas: number
-): Promise<{ data: T[]; error: boolean }> {
-  const keluaran: T[] = [];
-  let galat = false;
-  for (let dari = 0; dari < batas; dari += HALAMAN) {
-    const sampai = Math.min(dari + HALAMAN, batas) - 1;
-    let r = await bikin(dari, sampai);
-    if (r.error) r = await bikin(dari, sampai);
-    if (r.error) {
-      galat = true;
-      break;
-    }
-    const d = r.data ?? [];
-    keluaran.push(...d);
-    if (d.length < sampai - dari + 1) break;
-  }
-  return { data: keluaran, error: galat };
-}
 
 function bulanDari(ym: string): string {
   return `${MONTHS[parseInt(ym.slice(5))]} ${ym.slice(0, 4)}`;
@@ -92,10 +60,8 @@ export default async function ArchivePage({
   }>;
 }) {
   const sp = await searchParams;
-  const supabase = await createClient();
   const cari = sanitize(sp.cari ?? "");
   const cakupan = cakupanDari(sp.di);
-  const kolom = kolomCari(cakupan);
   const hanyaJudul = cakupan === "judul";
 
   const tahun = sp.tahun && /^\d{4}$/.test(sp.tahun) ? sp.tahun : "";
@@ -113,108 +79,16 @@ export default async function ArchivePage({
           : "pilih-tahun";
   const modeHasil = mode === "cari" || mode === "bulan" || mode === "tema";
 
-  // Kueri dasar: filter bulan/tema + urut tanggal terbaru.
-  // Tanpa .limit() — jatah baris datang dari .range() di ambilSemua().
-  const kueriDasar = () => {
-    let q = supabase
-      .from("devotions")
-      .select(
-        "slug, devotion_date, title, summary, theme, hearts_count"
-      )
-      .eq("status", "published")
-      .order("devotion_date", { ascending: false });
-
-    if (bulan) {
-      q = q.gte("devotion_date", `${bulan}-01`).lt(
-        "devotion_date",
-        bulan.endsWith("-12")
-          ? `${parseInt(bulan.slice(0, 4)) + 1}-01-01`
-          : `${bulan.slice(0, 4)}-${dua(parseInt(bulan.slice(5)) + 1)}-01`
-      );
-    }
-    if (tema) q = q.eq("theme", tema);
-    return q;
-  };
-
-  const pola = cari ? polaFrasa(cari) : [];
-  const kata = cari ? kataPencarian(cari) : [];
-
-  // Kueri kartu (hanya pada mode hasil) + query ringan (daftar tahun/bulan,
-  // tema, daftar tema untuk filter) dijalankan berbarean.
-  const [hasilKartu, ringkas] = await Promise.all([
-    (async (): Promise<{
-      devotions: DevotionCard[];
-      longgar: boolean;
-      galat: boolean;
-    }> => {
-      if (!modeHasil) return { devotions: [], longgar: false, galat: false };
-      let longgar = false;
-      let galat = false;
-      let devotions: DevotionCard[] = [];
-
-      if (mode === "cari" && pola.length > 0) {
-        const flat = pola
-          .flatMap((p) => kolom.map((c) => `${c}.ilike.*${p}*`))
-          .join(",");
-        const r = await ambilSemua<DevotionCard>(
-          (dari, sampai) => kueriDasar().or(flat).range(dari, sampai),
-          BATAS_HASIL
-        );
-        if (r.error) galat = true;
-        devotions = r.data;
-      }
-
-      if (mode === "cari" && devotions.length === 0 && kata.length > 1) {
-        const bikinKata = (dari: number, sampai: number) => {
-          let q2 = kueriDasar();
-          for (const k of kata) q2 = q2.or(grupKata(k, kolom));
-          return q2.range(dari, sampai);
-        };
-        const r2 = await ambilSemua<DevotionCard>(bikinKata, BATAS_HASIL);
-        if (r2.error) galat = true;
-        devotions = r2.data;
-        longgar = !r2.error && r2.data.length > 0;
-      }
-
-      if (mode !== "cari") {
-        const batas = mode === "bulan" ? BATAS_BULAN : BATAS_HASIL;
-        const r = await ambilSemua<DevotionCard>(
-          (dari, sampai) => kueriDasar().range(dari, sampai),
-          batas
-        );
-        if (r.error) galat = true;
-        devotions = r.data;
-        // Daftar bulan dibaca menurut tanggal naik: 1 … akhir bulan.
-        if (mode === "bulan") {
-          devotions.sort(
-            (a, b) =>
-              a.devotion_date.localeCompare(b.devotion_date) ||
-              a.slug.localeCompare(b.slug)
-          );
-        }
-      }
-
-      return { devotions, longgar, galat };
-    })(),
-    // Query ringan (hanya devotion_date + theme) TANPA batas 500 — dulu batas
-    // itu membuat tahun 2024 dan topik bulan 2024 tidak pernah muncul.
-    ambilSemua<{ devotion_date: string; theme: string | null }>(
-      (dari, sampai) =>
-        supabase
-          .from("devotions")
-          .select("devotion_date, theme")
-          .eq("status", "published")
-          .order("devotion_date", { ascending: false })
-          .order("slug", { ascending: true })
-          .range(dari, sampai),
-      BATAS_RINGKAS
-    ),
+  // Kartu (di-cache per kombinasi filter) + daftar tahun/bulan/tema (di-cache
+  // global) diambil berbarengan.
+  const [hasilKartu, opsi] = await Promise.all([
+    kartuArsip({ cari, cakupan, tahun, bulan, tema }),
+    semuaRingkas(),
   ]);
 
   const devotions = hasilKartu.devotions;
   const longgar = hasilKartu.longgar;
   const galatPencarian = hasilKartu.galat;
-  const opsi = ringkas.data;
 
   // Hitung per tahun & per bulan + tema paling sering tiap bulan.
   const hitungTahun = new Map<string, number>();
