@@ -229,7 +229,11 @@ body {
   background: transparent;
 }
 
-/* Bidang isi saat teduh */
+/* Bidang isi saat teduh — ukuran huruf diatur pemilih kecil/sedang/besar
+   lewat variabel --ukuran-isi pada wadah. Bawaan 17.5px = tampilan lama. */
+.isi-teduh {
+  font-size: var(--ukuran-isi, 17.5px);
+}
 .isi-teduh p {
   margin: 0;
 }
@@ -426,9 +430,10 @@ body {
 
 /* ---- Blok tambahan dari editor lengkap (tabel, daftar tugas, kode) ---- */
 
-/* Judul: gaya menempel ke elemen di dalam pembungkus blok */
+/* Judul: gaya menempel ke elemen di dalam pembungkus blok. Ukuran memakai em
+   supaya ikut membesar/mengecil bersama pemilih ukuran huruf isi. */
 .blok-h2 h2 {
-  font-size: 21px;
+  font-size: 1.2em;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -436,7 +441,7 @@ body {
   margin: 0;
 }
 .blok-h3 h3 {
-  font-size: 17.5px;
+  font-size: 1em;
   font-weight: 700;
   color: var(--color-plum);
   margin: 0;
@@ -444,7 +449,7 @@ body {
 /* Label PDF (Pengajar/Pengajaran/…) — biru kecil huruf besar */
 .blok-label h2,
 .blok-label h3 {
-  font-size: 13px;
+  font-size: 0.745em;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -463,7 +468,7 @@ body {
 /* Judul 1 di dalam isi — tetap ringkas, bukan banner */
 .isi-teduh h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 1.371em;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.2;

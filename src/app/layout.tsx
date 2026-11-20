@@ -4,6 +4,7 @@ import "./globals.css";
 import "@/components/loading.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PencatatKunjungan from "@/components/PencatatKunjungan";
 import { SITE_NAME } from "@/lib/constants";
 
 const geistSans = Geist({
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <PencatatKunjungan />
       </body>
     </html>
   );

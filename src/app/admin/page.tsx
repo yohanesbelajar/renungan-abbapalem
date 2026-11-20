@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatTanggalID, todayJakarta } from "@/lib/dates";
+import { ringkasanPengunjung } from "@/lib/pengunjung";
+import KartuPengunjung from "@/components/KartuPengunjung";
 
 
 export const dynamic = "force-dynamic";
@@ -8,6 +10,25 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboard() {
   const supabase = await createClient();
   const today = todayJakarta();
+
+  // Angka pengunjung hanya untuk super admin (permintaan Jo): admin & editor
+  // tidak boleh melihatnya, jadi blok ini tidak dirender dan tidak diambil
+  // sama sekali untuk peran lain.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: aku } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+    : { data: null };
+  const superAdmin = aku?.role === "superadmin";
+  let pengunjung = null;
+  if (superAdmin) {
+    try {
+      pengunjung = await ringkasanPengunjung(14);
+    } catch {
+      pengunjung = null;
+    }
+  }
 
   const { data: todayDevotion } = await supabase
     .from("devotions")
@@ -62,6 +83,8 @@ export default async function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {superAdmin && pengunjung && <KartuPengunjung data={pengunjung} />}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded-lg border border-slate-200 p-4">

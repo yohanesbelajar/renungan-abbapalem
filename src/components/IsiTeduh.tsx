@@ -3,11 +3,14 @@
 // Penampil isi saat teduh: menerima HTML editor Tiptap (atau teks polos lama),
 // membersihkannya, mengubah setiap rujukan ayat menjadi tautan yang membuka
 // pop-up ayat, lalu merender per blok dengan gaya yang sama seperti PDF asli.
+// Di atas isi ada pemilih ukuran huruf (kecil / sedang / besar) yang hanya
+// memengaruhi wadah isi ini, bukan seluruh halaman.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RE_RUJUKAN, parseRujukan, type Rujukan } from "@/lib/ayat";
 import { pecahIsi, sanitasiHtml, tautkanAyatHtml, isiHtml, teksKeHtml } from "@/lib/isi";
 import { PopupAyat } from "@/components/AyatTeks";
+import PemilihUkuran, { bacaUkuran, KUNCI_UKURAN, UKURAN_BAWAAN, type Ukuran } from "@/components/PemilihUkuran";
 
 // Kelas pembungkus per jenis blok. `html` berisi blok utuh (sudah termasuk tag
 // pembukanya), jadi gaya judul diberikan lewat CSS ke elemen di dalamnya —
@@ -25,10 +28,36 @@ const KELAS: Record<string, string> = {
   pemisah: "",
 };
 
+// Tinggi huruf isi per pilihan. Sedang = ukuran yang sudah dipakai sekarang,
+// jadi pengunjung yang tidak menyentuh pemilih melihat tampilan yang sama persis.
+const HURUF: Record<Ukuran, string> = {
+  kecil: "15.75px",
+  sedang: "17.5px",
+  besar: "21px",
+};
+
 export default function IsiTeduh({ isi }: { isi: string }) {
   const wadah = useRef<HTMLDivElement>(null);
   const [rujukan, setRujukan] = useState<Rujukan | null>(null);
   const [salah, setSalah] = useState<string | null>(null);
+  // Mulai dari bawaan supaya HTML server == klien (tanpa peringatan hidrasi);
+  // pilihan tersimpan dibaca setelah komponen hidup.
+  const [ukuran, setUkuran] = useState<Ukuran>(UKURAN_BAWAAN);
+  const [siap, setSiap] = useState(false);
+
+  useEffect(() => {
+    setUkuran(bacaUkuran());
+    setSiap(true);
+  }, []);
+
+  const ubah = useCallback((u: Ukuran) => {
+    setUkuran(u);
+    try {
+      localStorage.setItem(KUNCI_UKURAN, u);
+    } catch {
+      // localStorage diblokir — pilihan tetap berlaku selama halaman terbuka
+    }
+  }, []);
 
   const blok = useMemo(() => {
     const mentah = isiHtml(isi) ? isi : teksKeHtml(isi);
@@ -64,9 +93,14 @@ export default function IsiTeduh({ isi }: { isi: string }) {
 
   return (
     <>
+      <PemilihUkuran ukuran={ukuran} ubah={ubah} />
+
       <div
         ref={wadah}
-        className="isi-teduh mt-8 space-y-4 text-[17.5px] leading-[1.85] text-[#121212]"
+        data-ukuran={ukuran}
+        data-siap={siap ? "ya" : "belum"}
+        className="isi-teduh mt-5 space-y-4 leading-[1.85] text-[#121212]"
+        style={{ "--ukuran-isi": HURUF[ukuran] } as React.CSSProperties}
       >
         {blok.map((b, i) => (
           <div
