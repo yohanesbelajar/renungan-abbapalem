@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import MenuMobile from "./MenuMobile";
 
 export default async function Header() {
   const supabase = await createClient();
@@ -41,7 +42,7 @@ export default async function Header() {
         <nav className="flex items-center gap-1 text-[14px] font-medium">
           <Link
             href="/arsip"
-            className="inline-flex min-h-11 items-center rounded-full px-3 text-tinta-2 transition hover:bg-lavender hover:text-plum"
+            className="hidden min-h-11 items-center rounded-full px-3 text-tinta-2 transition hover:bg-lavender hover:text-plum sm:inline-flex"
           >
             Arsip
           </Link>
@@ -65,6 +66,7 @@ export default async function Header() {
           >
             {user ? "Profil" : "Masuk"}
           </Link>
+          <MenuMobile isStaff={isStaff} />
         </nav>
       </div>
     </header>
