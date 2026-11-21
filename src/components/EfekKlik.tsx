@@ -3,21 +3,33 @@
 import { useEffect } from "react";
 
 /**
- * Efek klik halus di seluruh situs.
+ * Efek klik halus — hanya saat tombol/tautan benar-benar diklik.
  *
- * Tujuan: memberi tahu pengunjung bahwa tekanannya tercatat — tanpa
- * mengganggu. Satu cincin tipis + pendar lembut yang memudar < 0,5 detik
- * di titik tekan, lalu hilang total (tidak ada elemen yang tertinggal).
+ * Tujuan: memberi tahu pengunjung bahwa klik-nya tercatat. Karena itu
+ * pemicunya `click` pada elemen interaktif, bukan setiap sentuhan layar:
+ * menggulir, menepuk area kosong, atau menyeret tidak memunculkan apa pun.
  *
- * Teknis: satu pendengar `pointerdown` di document (menangkap mouse, sentuh,
- * pena), simpul dibuat langsung di DOM — bukan state React — supaya klik
- * cepat berturut-turut tidak memicu render ulang komponen mana pun.
- * Lapisan pembungkus `pointer-events: none` sehingga tidak pernah menahan
- * klik dari tombol/tautan di bawahnya.
- *
- * Sentuhan yang berubah jadi geser (menggulir halaman) membatalkan cincin,
- * jadi menggulir tidak meninggalkan jejak efek.
+ * Teknis: satu pendengar `click` di document (fase tangkap), simpul dibuat
+ * langsung di DOM — bukan state React — supaya klik cepat berturut-turut
+ * tidak memicu render ulang komponen mana pun. Lapisan pembungkus
+ * `pointer-events: none` sehingga tidak pernah menahan klik apa pun.
  */
+const PEMILIH = [
+  "a[href]",
+  "button:not([disabled])",
+  "[role='button']",
+  "[role='link']",
+  "input[type='submit']",
+  "input[type='button']",
+  "input[type='reset']",
+  "input[type='checkbox']",
+  "input[type='radio']",
+  "label",
+  "summary",
+  "select",
+  "[data-efek-klik]",
+].join(",");
+
 export default function EfekKlik() {
   useEffect(() => {
     // Pengunjung yang meminta gerak dikurangi: tetap dapat umpan balik,
@@ -26,9 +38,6 @@ export default function EfekKlik() {
 
     let lapisan: HTMLDivElement | null = null;
     const hidup = new Set<HTMLSpanElement>();
-
-    // Tekanan yang sedang berlangsung, untuk membatalkan saat geser.
-    let aktif: { el: HTMLSpanElement; x: number; y: number; id: number } | null = null;
 
     const wadah = () => {
       if (!lapisan || !lapisan.isConnected) {
@@ -42,23 +51,18 @@ export default function EfekKlik() {
 
     const buang = (el: HTMLSpanElement) => {
       hidup.delete(el);
-      if (aktif?.el === el) aktif = null;
       el.remove();
     };
 
-    const saatTekan = (e: PointerEvent) => {
-      // Klik kanan/tengah bukan "action click" yang perlu dirayakan.
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-
+    const gambar = (x: number, y: number) => {
       const el = document.createElement("span");
       el.className = kurangiGerak.matches
         ? "efek-klik efek-klik-redup"
         : "efek-klik";
-      el.style.left = `${e.clientX}px`;
-      el.style.top = `${e.clientY}px`;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
       wadah().appendChild(el);
       hidup.add(el);
-      aktif = { el, x: e.clientX, y: e.clientY, id: e.pointerId };
 
       el.addEventListener("animationend", () => buang(el), { once: true });
       // Jaring pengaman bila animationend tidak pernah datang (tab latar).
@@ -66,35 +70,38 @@ export default function EfekKlik() {
         if (el.isConnected) buang(el);
       }, 900);
 
-      // Ketukan beruntun (mis. dobel-klik cepat) tidak menumpuk simpul.
+      // Ketukan beruntun tidak menumpuk simpul.
       if (hidup.size > 6) {
         const tertua = hidup.values().next().value;
         if (tertua) buang(tertua);
       }
     };
 
-    // Geser lebih dari 12 px = pengunjung menggulir, bukan menekan.
-    const saatGeser = (e: PointerEvent) => {
-      if (!aktif || e.pointerId !== aktif.id) return;
-      const jauh =
-        Math.abs(e.clientX - aktif.x) > 12 || Math.abs(e.clientY - aktif.y) > 12;
-      if (jauh) buang(aktif.el);
+    const saatKlik = (e: MouseEvent) => {
+      // Hanya klik kiri / sentuhan / pena — klik kanan bukan aksi.
+      if (e.button !== 0) return;
+
+      const target = e.target as Element | null;
+      const sasaran = target?.closest?.(PEMILIH);
+      if (!sasaran) return;
+
+      // Klik dari papan ketik (Enter/Spasi) tidak punya koordinat:
+      // tampilkan di tengah elemen yang diaktifkan.
+      if (e.detail === 0) {
+        const r = sasaran.getBoundingClientRect();
+        if (r.width || r.height) {
+          gambar(r.left + r.width / 2, r.top + r.height / 2);
+        }
+        return;
+      }
+
+      gambar(e.clientX, e.clientY);
     };
 
-    const saatLepas = (e: PointerEvent) => {
-      if (aktif && e.pointerId === aktif.id) aktif = null;
-    };
-
-    document.addEventListener("pointerdown", saatTekan, { passive: true });
-    document.addEventListener("pointermove", saatGeser, { passive: true });
-    document.addEventListener("pointerup", saatLepas, { passive: true });
-    document.addEventListener("pointercancel", saatLepas, { passive: true });
+    document.addEventListener("click", saatKlik, true);
 
     return () => {
-      document.removeEventListener("pointerdown", saatTekan);
-      document.removeEventListener("pointermove", saatGeser);
-      document.removeEventListener("pointerup", saatLepas);
-      document.removeEventListener("pointercancel", saatLepas);
+      document.removeEventListener("click", saatKlik, true);
       hidup.forEach((el) => el.remove());
       hidup.clear();
       lapisan?.remove();
