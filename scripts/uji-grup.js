@@ -81,7 +81,7 @@ async function rest(tkn, p, opts = {}) {
 const SANDI = "UjiGrup2026!";
 const stamp = Date.now();
 const akun = {
-  a: { email: `uji-grup-a-${stamp}@example.com`, nama: "Uji Alfa" },
+  a: { email: `uji-grup-a-${stamp}@example.com`, nama: "Uji Alfa", username: "uji" + String(stamp).slice(-8) },
   b: { email: `uji-grup-b-${stamp}@example.com`, nama: "Uji Beta" },
   c: { email: `uji-grup-c-${stamp}@example.com`, nama: "Uji Cakra" },
 };
@@ -130,10 +130,36 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
       console.log("CATATAN: saat teduh hari ini belum terbit — uji status 'hari ini' dilewati");
     }
 
-    // ---- 1. A membuat grup ----
+    const tB = await token(akun.b.email, SANDI);
+
+    // ---- 0. A membuat nama unik lewat halaman profil ----
     const ctxA = await browser.newContext();
     const pageA = await ctxA.newPage();
     await masuk(pageA, akun.a.email);
+    await pageA.goto(`${BASE}/profil`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageA);
+    await pageA.fill("#nama-unik", "a");
+    await pageA.click('button:has-text("Simpan nama")');
+    cek("nama unik menolak kurang dari 2 karakter",
+      (await pageA.content()).includes("Panjangnya harus"));
+    await pageA.fill("#nama-unik", "ada spasi");
+    await pageA.click('button:has-text("Simpan nama")');
+    cek("nama unik menolak spasi",
+      (await pageA.content()).includes("Hanya huruf kecil"));
+    await pageA.fill("#nama-unik", akun.a.username);
+    await pageA.click('button:has-text("Simpan nama")');
+    await pageA.waitForSelector('text=Tersimpan', { timeout: 20000 });
+    cek("A menyimpan nama unik lewat halaman profil", true, akun.a.username);
+
+    // nama unik harus unik: B mencoba memakai nama yang sama
+    const dup = await rest(tB, `/profiles?id=eq.${akun.b.id}`, {
+      method: "PATCH", headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ username: akun.a.username }),
+    });
+    cek("nama unik ditolak bila sudah dipakai orang lain",
+      dup.status >= 400, `status ${dup.status}`);
+
+    // ---- 1. A membuat grup ----
     await pageA.goto(`${BASE}/grup`, { waitUntil: "domcontentloaded" });
     await siapkan(pageA);
     await pageA.fill("#nama-grup", "Grup Uji Bersama");
@@ -146,7 +172,6 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     cek("pemilik melihat tautan undangan otomatis", /^[A-Z0-9]{16,40}$/.test(tokenUndang), tokenUndang || "(tidak ada)");
 
     // ---- 2. B bergabung lewat tautan ----
-    const tB = await token(akun.b.email, SANDI);
     const sebelumGabung = await rest(tB, "/communities?select=id");
     cek("B (belum gabung) tidak bisa melihat daftar grup lewat API", sebelumGabung.status === 200 && sebelumGabung.body.length === 0, `status ${sebelumGabung.status}, ${sebelumGabung.body.length} baris`);
 
@@ -157,7 +182,9 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     cek("B bergabung lewat tautan undangan", pageB.url().includes(idGrup));
     const isiB = await pageB.content();
     const panggilanA = akun.a.email.split("@")[0];
-    cek("B melihat nama anggota lain", isiB.includes(panggilanA), `mencari ${panggilanA}`);
+    cek("B melihat nama anggota lain memakai nama unik (bukan email)",
+      isiB.includes(akun.a.username) && !isiB.includes(panggilanA),
+      `mencari ${akun.a.username}`);
     if (devotionId) cek("B melihat penanda 'sudah baca' milik A", isiB.includes("Sudah baca"));
     const kotakB = await pageB.locator("[data-tautan-undangan]").count();
     cek("anggota biasa TIDAK melihat tautan undangan", kotakB === 0, `${kotakB} kotak`);
@@ -176,7 +203,7 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     await siapkan(pageC);
     const isiC = await pageC.content();
     cek("C (bukan anggota) tidak melihat isi grup sama sekali",
-      !isiC.includes("Grup Uji Bersama") && !isiC.includes(panggilanA),
+      !isiC.includes("Grup Uji Bersama") && !isiC.includes(akun.a.username),
       `status ${rC.status()}, panjang isi ${isiC.length}`);
 
     const tC = await token(akun.c.email, SANDI);

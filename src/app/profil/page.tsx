@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { formatTanggalID } from "@/lib/dates";
 import LogoutButton from "@/components/LogoutButton";
+import AturUsername from "@/components/AturUsername";
 
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, email, role")
+    .select("display_name, username, email, role")
     .eq("id", user.id)
     .single();
 
@@ -45,7 +46,7 @@ export default async function ProfilePage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Perjalanan Saya</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {profile?.display_name} · {profile?.email} ·{" "}
+            {profile?.username ? `@${profile.username}` : profile?.display_name} · {profile?.email} ·{" "}
             {profile?.role === "member"
               ? "Anggota"
               : profile?.role === "editor"
@@ -68,6 +69,8 @@ export default async function ProfilePage() {
           <p className="mt-1 text-sm text-slate-600">Heart diberikan</p>
         </div>
       </div>
+
+      <AturUsername awal={profile?.username ?? ""} />
 
       <h2 className="mt-10 text-lg font-semibold text-slate-700">
         Riwayat bacaan selesai
