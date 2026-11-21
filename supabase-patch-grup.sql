@@ -286,3 +286,83 @@ as $$
     where me.community_id = m.community_id and me.user_id = auth.uid())
   order by c.name, m.joined_at;
 $$;
+
+-- =============================================================
+-- 10. LANJUTAN 21 Nov 2026: bintang mingguan di papan grup ------
+--    Kolom `minggu` = 7 boolean (Minggu..Sabtu minggu berjalan,
+--    menurut Asia/Jakarta): true bila devotional tanggal itu dibaca.
+--    Dipakai papan /grup/<id> untuk 7 bintang per anggota.
+-- =============================================================
+drop function if exists public.komunitas_progres();
+create function public.komunitas_progres()
+returns table (
+  grup_id     uuid,
+  grup_nama   text,
+  kode_undang text,
+  user_id     uuid,
+  nama        text,
+  peran       text,
+  bergabung   timestamptz,
+  hari_ini    boolean,
+  total_selesai bigint,
+  streak      bigint,
+  minggu      boolean[]
+)
+language sql security definer set search_path = public
+as $$
+  select m.community_id,
+         c.name,
+         c.invite_code,
+         m.user_id,
+         coalesce(nullif(btrim(p.username), ''),
+                  nullif(btrim(p.display_name), ''),
+                  'Anggota'),
+         m.role,
+         m.joined_at,
+         exists (
+           select 1 from reading_progress rp
+           join devotions d on d.id = rp.devotion_id
+           where rp.user_id = m.user_id
+             and d.devotion_date = (now() at time zone 'Asia/Jakarta')::date
+             and d.status = 'published'),
+         (select count(*) from reading_progress rp2 where rp2.user_id = m.user_id),
+         st.streak,
+         mg.minggu
+  from community_members m
+  join communities c on c.id = m.community_id
+  join profiles p on p.id = m.user_id
+  cross join lateral (
+    select coalesce(min(g), 367) as streak
+    from generate_series(0, 366) g
+    where not exists (
+      select 1
+      from reading_progress rp
+      join devotions d on d.id = rp.devotion_id
+      where rp.user_id = m.user_id
+        and d.devotion_date = (now() at time zone 'Asia/Jakarta')::date - g
+    )
+  ) st
+  cross join lateral (
+    select ((now() at time zone 'Asia/Jakarta')::date
+            - (extract(dow from (now() at time zone 'Asia/Jakarta')::date))::int) as awal
+  ) wk
+  cross join lateral (
+    select array_agg(
+             exists (
+               select 1
+               from reading_progress rp
+               join devotions d on d.id = rp.devotion_id
+               where rp.user_id = m.user_id
+                 and d.devotion_date = wk.awal + g
+                 and d.status = 'published')
+             order by g) as minggu
+    from generate_series(0, 6) g
+  ) mg
+  where exists (
+    select 1 from community_members me
+    where me.community_id = m.community_id and me.user_id = auth.uid())
+  order by c.name, m.joined_at;
+$$;
+
+revoke all on function public.komunitas_progres() from public, anon;
+grant execute on function public.komunitas_progres() to authenticated;

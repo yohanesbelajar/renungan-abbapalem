@@ -31,6 +31,11 @@
   --color-senja: #e08a00;
   --color-senja-muda: #f7c274;
   --color-merah: #e01b22;
+  /* Papan grup: latar status baca + bintang mingguan */
+  --color-baca-ya: #dcf3e6;
+  --color-baca-tidak: #eeeef2;
+  --color-bintang-nyala: #f2b30a;
+  --color-bintang-padam: #b7b1a8;
 }
 
 @theme inline {
@@ -73,6 +78,10 @@
     --color-jingga: #f0b083;
     --color-senja: #f0a83c;
     --color-senja-muda: #f7c274;
+    --color-baca-ya: #12301f;
+    --color-baca-tidak: #2a2533;
+    --color-bintang-nyala: #f7c274;
+    --color-bintang-padam: #6f687c;
   }
 }
 :root[data-tema="gelap"] {
@@ -94,6 +103,10 @@
   --color-jingga: #f0b083;
   --color-senja: #f0a83c;
   --color-senja-muda: #f7c274;
+  --color-baca-ya: #12301f;
+  --color-baca-tidak: #2a2533;
+  --color-bintang-nyala: #f7c274;
+  --color-bintang-padam: #6f687c;
 }
 /* Latar gradasi & kartu yang ditulis langsung (bukan lewat token) */
 @media (prefers-color-scheme: dark) {

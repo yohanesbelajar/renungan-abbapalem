@@ -15,7 +15,8 @@ export default function RoleSelect({
   const [value, setValue] = useState(role);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  // Baris super admin hanya bisa diubah oleh super admin lain.
+  // Opsi Super Admin hanya ditawarkan kepada super admin (Jo) — permanen.
+  // Baris super admin selain milik super admin tampil terkunci tanpa pilihan.
   const terkunci = role === "superadmin" && !canSuper;
 
   async function change(newRole: string) {
@@ -39,11 +40,22 @@ export default function RoleSelect({
     setTimeout(() => setState("idle"), 2000);
   }
 
+  if (terkunci) {
+    return (
+      <span
+        title="Peran ini hanya bisa diubah super admin"
+        className="text-xs text-slate-400"
+      >
+        terkunci
+      </span>
+    );
+  }
+
   return (
     <span className="flex items-center gap-2">
       <select
         value={value}
-        disabled={state === "saving" || terkunci}
+        disabled={state === "saving"}
         onChange={(e) => change(e.target.value)}
         className="rounded border border-slate-300 bg-cream px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-70"
         aria-label="Peran pengguna"
@@ -51,14 +63,13 @@ export default function RoleSelect({
         <option value="member">Anggota</option>
         <option value="editor">Editor</option>
         <option value="admin">Admin</option>
-        <option value="superadmin">Super Admin</option>
+        {canSuper && <option value="superadmin">Super Admin</option>}
       </select>
       {state === "saving" && <span className="text-xs text-slate-400">menyimpan…</span>}
       {state === "saved" && <span className="text-xs text-green-600">tersimpan</span>}
       {state === "error" && (
         <span className="text-xs text-red-600">gagal — izin ditolak</span>
       )}
-      {terkunci && <span className="text-xs text-slate-400">terkunci</span>}
     </span>
   );
 }

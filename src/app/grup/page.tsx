@@ -16,6 +16,8 @@ export type BarisKomunitas = {
   hari_ini: boolean;
   total_selesai: number;
   streak: number;
+  /** 7 boolean Minggu..Sabtu minggu berjalan — true bila hari itu dibaca. */
+  minggu: boolean[];
 };
 
 export default async function HalamanKomunitas() {

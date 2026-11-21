@@ -47,13 +47,15 @@ export default async function ProfilePage() {
           <h1 className="text-2xl font-bold text-slate-900">Perjalanan Saya</h1>
           <p className="mt-1 text-sm text-slate-500">
             {profile?.username ? `@${profile.username}` : profile?.display_name} · {profile?.email} ·{" "}
-            {profile?.role === "member"
-              ? "Anggota"
-              : profile?.role === "editor"
-                ? "Editor"
-                : profile?.role === "superadmin"
-                  ? "Super Admin"
-                  : "Admin"}
+            <strong className="font-semibold text-tinta-2">
+              {profile?.role === "member"
+                ? "Anggota"
+                : profile?.role === "editor"
+                  ? "Editor"
+                  : profile?.role === "superadmin"
+                    ? "Super Admin"
+                    : "Admin"}
+            </strong>
           </p>
         </div>
         <LogoutButton />

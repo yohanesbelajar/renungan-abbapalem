@@ -8,6 +8,8 @@ import type { BarisKomunitas } from "../page";
 
 export const dynamic = "force-dynamic";
 
+const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
 export default async function HalamanGrup({
   params,
 }: {
@@ -77,61 +79,95 @@ export default async function HalamanGrup({
       <div className="mt-6 overflow-hidden rounded-2xl border border-garis-tipis bg-kertas">
         <div className="flex items-center justify-between border-b border-garis-tipis bg-krem-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-tinta-3">
           <span>Anggota</span>
-          <span>Hari ini · streak</span>
+          <span>Bintang minggu · streak</span>
         </div>
         <ul className="divide-y divide-garis-tipis">
-          {anggota.map((a) => (
-            <li
-              key={a.user_id}
-              className="flex items-center justify-between gap-3 px-4 py-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium text-tinta">
-                  {a.nama}
-                  {a.peran === "owner" && (
-                    <span className="ml-2 rounded-full bg-lavender px-2 py-0.5 text-[11px] font-medium text-plum">
-                      Pemilik
-                    </span>
+          {anggota.map((a) => {
+            const bintang = a.minggu ?? Array<boolean>(7).fill(false);
+            // Peran dibedakan lewat ketebalan huruf + titik warna — tanpa label tulisan.
+            const tebal =
+              a.peran === "owner"
+                ? "font-bold"
+                : a.peran === "admin"
+                  ? "font-semibold"
+                  : "font-medium";
+            const peranJudul =
+              a.peran === "owner"
+                ? "Pemilik grup"
+                : a.peran === "admin"
+                  ? "Admin grup"
+                  : undefined;
+            return (
+              <li
+                key={a.user_id}
+                data-user={a.user_id}
+                data-peran={a.peran}
+                data-status={a.hari_ini ? "sudah" : "belum"}
+                data-streak={a.streak}
+                data-bintang={bintang.map((b) => (b ? "1" : "0")).join("")}
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <span
+                    title={peranJudul}
+                    className={`inline-block max-w-full truncate rounded-md px-2 py-0.5 ${tebal} ${
+                      a.hari_ini ? "bg-baca-ya" : "bg-baca-tidak"
+                    }`}
+                  >
+                    {a.nama}
+                    {a.peran !== "member" && (
+                      <span
+                        aria-hidden
+                        className={`ml-1.5 inline-block h-1.5 w-1.5 rounded-full align-middle ${
+                          a.peran === "owner" ? "bg-plum" : "bg-ungu"
+                        }`}
+                      />
+                    )}
+                  </span>
+                </div>
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                  <span
+                    title="Bintang minggu ini (Minggu–Sabtu)"
+                    className="flex items-center gap-[2px] text-[15px] leading-none"
+                  >
+                    {bintang.map((b, i) => (
+                      <span
+                        key={i}
+                        data-bintang-hari={i}
+                        title={`${HARI[i]}: ${b ? "sudah dibaca" : "belum"}`}
+                        className={b ? "text-bintang-nyala" : "text-bintang-padam"}
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </span>
+                  <span
+                    data-streak-angka
+                    title="Baca beruntun sampai hari ini"
+                    aria-label={`Baca beruntun ${a.streak} hari`}
+                    className="min-w-6 text-right text-sm font-semibold text-senja"
+                  >
+                    {a.streak}
+                  </span>
+                  {sayaPemilik && a.user_id !== user.id && (
+                    <UbahPeran
+                      grupId={id}
+                      userId={a.user_id}
+                      peranSekarang={a.peran}
+                    />
                   )}
-                  {a.peran === "admin" && (
-                    <span className="ml-2 rounded-full bg-lavender px-2 py-0.5 text-[11px] font-medium text-plum">
-                      Admin
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-3">
-                <span
-                  title="Baca beruntun sampai hari ini"
-                  className="font-semibold text-[#c77700]"
-                >
-                  ✳ {a.streak}
-                </span>
-                <span
-                  className={
-                    a.hari_ini
-                      ? "rounded-full bg-[#e7f6ec] px-3 py-1 text-xs font-semibold text-[#1e7a44]"
-                      : "rounded-full bg-krem-3 px-3 py-1 text-xs text-tinta-3"
-                  }
-                >
-                  {a.hari_ini ? "✓ Sudah baca" : "Belum"}
-                </span>
-                {sayaPemilik && a.user_id !== user.id && (
-                  <UbahPeran
-                    grupId={id}
-                    userId={a.user_id}
-                    peranSekarang={a.peran}
-                  />
-                )}
-              </div>
-            </li>
-          ))}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
       <p className="mt-3 text-xs text-tinta-3">
-        Yang tampil di halaman ini hanya catatan bacaan (sudah/belum), bukan
-        isi renungan atau doa pribadi Anda.
+        Nama berlatar hijau = sudah baca hari ini, abu = belum. Bintang = hari
+        yang dibaca minggu ini (Minggu–Sabtu), angka di sebelahnya = baca
+        beruntun. Yang tampil di sini hanya catatan bacaan, bukan isi renungan
+        atau doa pribadi Anda.
       </p>
 
       <div className="mt-6">

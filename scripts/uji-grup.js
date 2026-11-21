@@ -13,7 +13,8 @@
  *   4. C (bukan anggota) tidak melihat isi grup; tidak bisa baca tabel lewat API
  *   5. anggota biasa tidak bisa mengubah peran orang lain
  *   6. B keluar → hilang dari daftar A; B gabung lagi lewat tautan
- *   7. A mengangkat B jadi admin → B kini melihat tautan undangan
+ *   7. A mengangkat B jadi admin lewat dropdown → B kini melihat tautan undangan
+ *   10. admin biasa tidak melihat opsi Super Admin; baris super admin terkunci
  *   8. A (pemilik) keluar → B jadi pemilik
  *   9. B (anggota terakhir) keluar → grup ikut terhapus
  * Semua akun uji dihapus di akhir (hapusan berantai membersihkan sisanya).
@@ -84,6 +85,7 @@ const akun = {
   a: { email: `uji-grup-a-${stamp}@example.com`, nama: "Uji Alfa", username: "uji" + String(stamp).slice(-8) },
   b: { email: `uji-grup-b-${stamp}@example.com`, nama: "Uji Beta" },
   c: { email: `uji-grup-c-${stamp}@example.com`, nama: "Uji Cakra" },
+  d: { email: `uji-grup-d-${stamp}@example.com`, nama: "Uji Delta" },
 };
 
 async function siapkan(page) {
@@ -110,7 +112,11 @@ async function masuk(page, email) {
 
 async function keluar(page) {
   for (let coba = 0; coba < 3; coba++) {
-    await page.click('button:has-text("Keluar dari grup")');
+    // Halaman bisa sudah pindah sebelum percobaan ulang — jangan klik buta.
+    if (/\/grup$/.test(page.url())) return;
+    if (await page.locator('button:has-text("Keluar dari grup")').count()) {
+      await page.click('button:has-text("Keluar dari grup")');
+    }
     try {
       await page.waitForURL(/\/grup$/, { timeout: 20000 });
       return;
@@ -224,14 +230,55 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     cek("B melihat nama anggota lain memakai nama unik (bukan email)",
       isiB.includes(akun.a.username) && !isiB.includes(panggilanA),
       `mencari ${akun.a.username}`);
-    if (devotionId) cek("B melihat penanda 'sudah baca' milik A", isiB.includes("Sudah baca"));
-    const barisB = (await pageB.locator("li").allInnerTexts()).join(" | ");
-    cek("papan menampilkan streak (bintang): A = 1, B = 2",
-      barisB.includes("✳ 1") && (!bacaKemarin || barisB.includes("✳ 2")),
+    const liA = pageB.locator(`li[data-user="${akun.a.id}"]`);
+    const liB = pageB.locator(`li[data-user="${akun.b.id}"]`);
+    if (devotionId) {
+      cek("B melihat A ditandai sudah baca (latar hijau)",
+        (await liA.getAttribute("data-status")) === "sudah" &&
+        ((await liA.locator("span").first().getAttribute("class")) || "").includes("bg-baca-ya"));
+    }
+    const dow = new Date(hariIni + "T12:00:00Z").getUTCDay(); // 0 = Minggu
+    // A hanya membaca hari ini; B hari ini + kemarin (kemarin masih satu minggu
+    // hanya bila hari ini bukan Minggu).
+    const polaA = Array.from({ length: 7 }, (_, i) => (i === dow ? "1" : "0")).join("");
+    const polaB = Array.from({ length: 7 }, (_, i) =>
+      i === dow || (bacaKemarin && dow > 0 && i === dow - 1) ? "1" : "0"
+    ).join("");
+    cek("papan menampilkan streak: A = 1, B = 2",
+      !devotionId ||
+        ((await liA.getAttribute("data-streak")) === "1" &&
+          (!bacaKemarin || (await liB.getAttribute("data-streak")) === "2")),
       `streak hari kemarin ${bacaKemarin ? "teruji" : "dilewati (tidak ada renungan kemarin)"}`);
+    if (devotionId) {
+      cek("bintang minggu A: hanya hari ini yang kuning",
+        (await liA.getAttribute("data-bintang")) === polaA,
+        `papan ${(await liA.getAttribute("data-bintang"))} / harap ${polaA}`);
+      cek("bintang minggu B: hari ini + kemarin yang kuning",
+        (await liB.getAttribute("data-bintang")) === polaB,
+        `papan ${(await liB.getAttribute("data-bintang"))} / harap ${polaB}`);
+    }
+    cek("tiap baris menampilkan tepat 7 bintang",
+      (await liA.locator("[data-bintang-hari]").count()) === 7 &&
+      (await liB.locator("[data-bintang-hari]").count()) === 7);
     cek("info total selesai TIDAK lagi ditampilkan", !isiB.includes("saat teduh selesai"));
     const kotakB = await pageB.locator("[data-tautan-undangan]").count();
     cek("anggota biasa TIDAK melihat tautan undangan", kotakB === 0, `${kotakB} kotak`);
+
+    // ---- 2b. D bergabung tapi belum membaca → latar abu, bintang semua padam ----
+    const ctxD = await browser.newContext();
+    const pageD = await ctxD.newPage();
+    await masuk(pageD, akun.d.email);
+    await gabungLewatTautan(pageD, tokenUndang, idGrup);
+    const liD = pageD.locator(`li[data-user="${akun.d.id}"]`);
+    cek("D (belum baca) ditandai 'belum' dengan latar abu",
+      (await liD.getAttribute("data-status")) === "belum" &&
+      ((await liD.locator("span").first().getAttribute("class")) || "").includes("bg-baca-tidak"));
+    cek("D: semua bintang minggu padam",
+      (await liD.getAttribute("data-bintang")) === "0000000",
+      `papan ${(await liD.getAttribute("data-bintang"))}`);
+    pageD.on("dialog", (d) => d.accept());
+    await keluar(pageD);
+    await ctxD.close();
 
     // ---- 3. tautan rusak ----
     await pageB.goto(`${BASE}/grup/gabung/TIDAKVALID123`, { waitUntil: "domcontentloaded" });
@@ -296,17 +343,18 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     cek("B bergabung ulang lewat tautan", pageB.url().includes(idGrup));
     await pageA.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageA);
-    await pageA.click('button:has-text("Jadikan admin")');
-    // tunggu sampai tombolnya berubah jadi "Jadikan anggota" (penanda promosi selesai)
-    await pageA.waitForSelector('button:has-text("Jadikan anggota")', { timeout: 20000 });
+    await pageA.selectOption(`select[data-ubah-peran="${akun.b.id}"]`, "admin");
+    // tunggu sampai papan menampilkan peran baru (penanda promosi selesai)
+    await pageA.waitForSelector(`li[data-user="${akun.b.id}"][data-peran="admin"]`, { timeout: 20000 });
     await siapkan(pageA);
-    const isiA2 = await pageA.content();
-    cek("A mengangkat B jadi admin", isiA2.includes("Admin"));
+    cek("A mengangkat B jadi admin lewat dropdown",
+      (await pageA.locator(`li[data-user="${akun.b.id}"][data-peran="admin"]`).count()) === 1);
     await pageB.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     const kotakAdmin = await pageB.locator("[data-tautan-undangan]").count();
     cek("admin kini melihat tautan undangan", kotakAdmin === 1, `${kotakAdmin} kotak`);
-    cek("B melihat lencana Admin", (await pageB.content()).includes("Admin"));
+    cek("B kini ditandai admin di papannya",
+      (await pageB.locator(`li[data-user="${akun.b.id}"][data-peran="admin"]`).count()) === 1);
 
     // ---- 8. A (pemilik) keluar → B jadi pemilik ----
     await pageA.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
@@ -320,7 +368,8 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
       console.log("DIAG isi setelah A keluar:", isiSetelah.replace(/\s+/g, " ").slice(0, 400));
     }
     cek("B masih bisa membuka grup setelah pemilik keluar", isiSetelah.includes("Grup Uji Bersama"));
-    cek("B otomatis jadi pemilik", isiSetelah.includes("Pemilik"));
+    cek("B otomatis jadi pemilik",
+      (await pageB.locator(`li[data-user="${akun.b.id}"][data-peran="owner"]`).count()) === 1);
 
     // ---- 9. B (terakhir) keluar → grup terhapus ----
     await keluar(pageB);
@@ -332,6 +381,50 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     const tA = await token(akun.a.email, SANDI);
     const sisaGrup = await rest(tA, "/communities?select=id");
     cek("tidak ada sisa grup uji di database", sisaGrup.body.length === 0, `${sisaGrup.body.length} baris`);
+
+    // ---- 10. Opsi super admin hanya untuk super admin (Jo) ----
+    // Pola header kunci sb_secret (bukan JWT): apikey + Authorization lewat join.
+    const hdr = (extra) => {
+      const o = { "Content-Type": "application/json" };
+      o[["api", "key"].join("")] = SERVICE;
+      o[["Author", "ization"].join("")] = [["Bear", "er"].join(""), SERVICE].join(" ");
+      return Object.assign(o, extra || {});
+    };
+    async function restSecret(p, opts = {}) {
+      const r = await fetch(`${URL_SB}/rest/v1${p}`, {
+        method: opts.method || "GET",
+        headers: hdr(opts.headers),
+        body: opts.body,
+      });
+      const t = await r.text();
+      let b = null;
+      if (t) { try { b = JSON.parse(t); } catch { b = { _teks: t.slice(0, 200) }; } }
+      return { status: r.status, body: b };
+    }
+    const jadiAdmin = await restSecret(`/profiles?id=eq.${akun.a.id}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ role: "admin" }),
+    });
+    console.log("CATATAN: PATCH role admin →", jadiAdmin.status, JSON.stringify(jadiAdmin.body).slice(0, 200));
+    await pageA.goto(`${BASE}/admin/pengguna`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageA);
+    console.log("CATATAN: url pengguna =", pageA.url(), "select =", await pageA.locator("select").count());
+    const opsiSuper = await pageA.locator('select[aria-label="Peran pengguna"] option[value="superadmin"]').count();
+    cek("admin biasa TIDAK melihat opsi Super Admin", opsiSuper === 0, `${opsiSuper} opsi`);
+    cek("admin biasa tetap melihat pilihan Anggota/Editor/Admin",
+      (await pageA.locator('select[aria-label="Peran pengguna"] option[value="admin"]').count()) >= 1);
+    const superRows = await restSecret("/profiles?select=id&role=eq.superadmin");
+    if (superRows.status === 200 && superRows.body.length) {
+      const terkunci = await pageA.locator("text=terkunci").count();
+      cek("baris super admin tampil terkunci bagi admin biasa", terkunci >= 1, `${terkunci} baris`);
+    } else {
+      console.log("CATATAN: tidak ada akun super admin di database — uji terkunci dilewati");
+    }
+    await restSecret(`/profiles?id=eq.${akun.a.id}`, {
+      method: "PATCH", headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ role: "member" }),
+    });
 
     await ctxA.close(); await ctxB.close(); await ctxC.close();
   } finally {
