@@ -125,12 +125,12 @@ async function masuk(page, email) {
     const ctxA = await browser.newContext();
     const pageA = await ctxA.newPage();
     await masuk(pageA, akun.a.email);
-    await pageA.goto(`${BASE}/komunitas`, { waitUntil: "domcontentloaded" });
+    await pageA.goto(`${BASE}/grup`, { waitUntil: "domcontentloaded" });
     await siapkan(pageA);
-    await pageA.fill("#nama-grup", "Grup Uji Komunitas");
+    await pageA.fill("#nama-grup", "Grup Uji Bersama");
     await pageA.click('form:has(#nama-grup) button[type="submit"]');
-    await pageA.waitForURL(/\/komunitas\/[0-9a-f-]{36}$/, { timeout: 20000 });
-    const idGrup = pageA.url().split("/komunitas/")[1];
+    await pageA.waitForURL(/\/grup\/[0-9a-f-]{36}$/, { timeout: 20000 });
+    const idGrup = pageA.url().split("/grup/")[1];
     cek("A membuat grup dan masuk ke halaman grup", true, idGrup);
     const kode = (await pageA.textContent("p.font-mono"))?.trim() || "";
     cek("halaman grup menampilkan kode undangan", /^[A-Z0-9]{6,12}$/.test(kode), kode);
@@ -143,12 +143,12 @@ async function masuk(page, email) {
     const ctxB = await browser.newContext();
     const pageB = await ctxB.newPage();
     await masuk(pageB, akun.b.email);
-    await pageB.goto(`${BASE}/komunitas`, { waitUntil: "domcontentloaded" });
+    await pageB.goto(`${BASE}/grup`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     await pageB.fill("#kode-undang", kode);
     await pageB.click('form:has(#kode-undang) button[type="submit"]');
     try {
-      await pageB.waitForURL(new RegExp(`/komunitas/${idGrup}$`), { timeout: 20000 });
+      await pageB.waitForURL(new RegExp(`/grup/${idGrup}$`), { timeout: 20000 });
     } catch (e) {
       console.log("DIAG url B:", pageB.url());
       console.log("DIAG isi B:", ((await pageB.textContent("body")) || "").replace(/\s+/g, " ").slice(0, 400));
@@ -165,11 +165,11 @@ async function masuk(page, email) {
     const ctxC = await browser.newContext();
     const pageC = await ctxC.newPage();
     await masuk(pageC, akun.c.email);
-    const rC = await pageC.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    const rC = await pageC.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageC);
     const isiC = await pageC.content();
     cek("C (bukan anggota) tidak melihat isi grup sama sekali",
-      !isiC.includes("Grup Uji Komunitas") && !isiC.includes(panggilanA),
+      !isiC.includes("Grup Uji Bersama") && !isiC.includes(panggilanA),
       `status ${rC.status()}, panjang isi ${isiC.length}`);
 
     // ---- 4. C tidak bisa membaca data lewat API ----
@@ -185,46 +185,46 @@ async function masuk(page, email) {
 
     // ---- 5. B keluar ----
     pageC.on("dialog", (d) => d.accept());
-    await pageB.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await pageB.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     pageB.on("dialog", (d) => d.accept());
     await pageB.click('button:has-text("Keluar dari grup")');
-    await pageB.waitForURL(/\/komunitas$/, { timeout: 20000 });
+    await pageB.waitForURL(/\/grup$/, { timeout: 20000 });
     await pageB.reload({ waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     const daftarB = await pageB.content();
-    cek("B keluar dan grup hilang dari daftarnya", !daftarB.includes("Grup Uji Komunitas"));
+    cek("B keluar dan grup hilang dari daftarnya", !daftarB.includes("Grup Uji Bersama"));
     const sisaB = await rest(tB, "/community_members?select=user_id");
     cek("B tidak lagi tercatat sebagai anggota", sisaB.body.length === 0, `${sisaB.body.length} baris`);
 
     // ---- 6. B bergabung lagi, lalu A (pemilik) keluar → B jadi pemilik ----
-    await pageB.goto(`${BASE}/komunitas`, { waitUntil: "domcontentloaded" });
+    await pageB.goto(`${BASE}/grup`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     await pageB.fill("#kode-undang", kode);
     await pageB.click('form:has(#kode-undang) button[type="submit"]');
-    await pageB.waitForURL(new RegExp(`/komunitas/${idGrup}$`), { timeout: 20000 });
-    await pageA.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await pageB.waitForURL(new RegExp(`/grup/${idGrup}$`), { timeout: 20000 });
+    await pageA.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageA);
     pageA.on("dialog", (d) => d.accept());
     await pageA.click('button:has-text("Keluar dari grup")');
-    await pageA.waitForURL(/\/komunitas$/, { timeout: 20000 });
-    await pageB.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await pageA.waitForURL(/\/grup$/, { timeout: 20000 });
+    await pageB.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     const isiSetelah = await pageB.content();
-    if (!isiSetelah.includes("Grup Uji Komunitas")) {
+    if (!isiSetelah.includes("Grup Uji Bersama")) {
       console.log("DIAG isi setelah A keluar:", isiSetelah.replace(/\s+/g, " ").slice(0, 400));
     }
-    cek("B masih bisa membuka grup setelah pemilik keluar", isiSetelah.includes("Grup Uji Komunitas"));
+    cek("B masih bisa membuka grup setelah pemilik keluar", isiSetelah.includes("Grup Uji Bersama"));
     cek("B otomatis jadi pemilik", isiSetelah.includes("Pemilik"));
 
     // ---- 7. B (terakhir) keluar → grup terhapus ----
     await pageB.click('button:has-text("Keluar dari grup")');
-    await pageB.waitForURL(/\/komunitas$/, { timeout: 20000 });
+    await pageB.waitForURL(/\/grup$/, { timeout: 20000 });
     await siapkan(pageB);
-    await pageB.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await pageB.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     const isiHapus = await pageB.content();
-    cek("grup ikut terhapus saat anggota terakhir keluar", !isiHapus.includes("Grup Uji Komunitas"));
+    cek("grup ikut terhapus saat anggota terakhir keluar", !isiHapus.includes("Grup Uji Bersama"));
     const tA = await token(akun.a.email, SANDI);
     const sisaGrup = await rest(tA, "/communities?select=id");
     cek("tidak ada sisa grup uji di database", sisaGrup.body.length === 0, `${sisaGrup.body.length} baris`);

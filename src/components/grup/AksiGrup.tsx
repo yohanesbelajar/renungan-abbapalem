@@ -42,7 +42,7 @@ export default function AksiGrup() {
       return;
     }
     setNama("");
-    router.push(`/komunitas/${data.id}`);
+    router.push(`/grup/${data.id}`);
     router.refresh();
   }
 
@@ -68,7 +68,7 @@ export default function AksiGrup() {
       return;
     }
     setKode("");
-    router.push(`/komunitas/${data}`);
+    router.push(`/grup/${data}`);
     router.refresh();
   }
 

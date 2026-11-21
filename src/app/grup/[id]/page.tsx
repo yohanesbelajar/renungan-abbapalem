@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import KodeUndang from "@/components/komunitas/KodeUndang";
-import TinggalkanGrup from "@/components/komunitas/TinggalkanGrup";
+import KodeUndang from "@/components/grup/KodeUndang";
+import TinggalkanGrup from "@/components/grup/TinggalkanGrup";
 import type { BarisKomunitas } from "../page";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function HalamanGrup({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(`/masuk?next=/komunitas/${id}`);
+  if (!user) redirect(`/masuk?next=/grup/${id}`);
 
   const { data, error } = await supabase.rpc("komunitas_progres");
   if (error) {
@@ -26,8 +26,8 @@ export default async function HalamanGrup({
         <p className="rounded-xl border border-merah/30 bg-merah/5 px-4 py-3 text-sm text-merah">
           Gagal memuat grup: {error.message}
         </p>
-        <Link href="/komunitas" className="btn btn-sekunder mt-4">
-          Kembali ke komunitas
+        <Link href="/grup" className="btn btn-sekunder mt-4">
+          Kembali ke grup
         </Link>
       </div>
     );
@@ -46,10 +46,10 @@ export default async function HalamanGrup({
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <Link
-        href="/komunitas"
+        href="/grup"
         className="text-sm text-tinta-2 hover:text-plum"
       >
-        ← Semua komunitas
+        ← Semua grup
       </Link>
 
       <div className="mt-3 flex flex-wrap items-start justify-between gap-3">

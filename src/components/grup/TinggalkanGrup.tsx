@@ -35,7 +35,7 @@ export default function TinggalkanGrup({
       setPesan(`Gagal keluar: ${error.message}`);
       return;
     }
-    router.push("/komunitas");
+    router.push("/grup");
     router.refresh();
   }
 

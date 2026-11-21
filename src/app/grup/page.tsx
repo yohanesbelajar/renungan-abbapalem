@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import AksiGrup from "@/components/komunitas/AksiGrup";
+import AksiGrup from "@/components/grup/AksiGrup";
 
 export const dynamic = "force-dynamic";
 
@@ -22,26 +23,9 @@ export default async function HalamanKomunitas() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-10">
-        <h1 className="text-2xl font-bold text-plum">Komunitas Saat Teduh</h1>
-        <p className="mt-3 leading-relaxed text-tinta-2">
-          Buat grup seperti grup WhatsApp: ajak teman sejawat, lalu lihat bersama
-          siapa yang sudah menyelesaikan Saat Teduh hari ini. Progres hanya
-          dibagikan di dalam grup yang Anda ikuti — halaman lain tetap privat.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/masuk?next=/komunitas" className="btn btn-utama">
-            Masuk
-          </Link>
-          <Link href="/daftar" className="btn btn-sekunder">
-            Daftar akun baru
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // Belum login / belum punya akun → langsung ke halaman masuk
+  // (di halaman itu ada tautan "Daftar" untuk akun baru).
+  if (!user) redirect("/masuk?next=/grup");
 
   const { data, error } = await supabase.rpc("komunitas_progres");
   const baris = ((data ?? []) as BarisKomunitas[]).filter((b) => b.grup_id);
@@ -59,14 +43,14 @@ export default async function HalamanKomunitas() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-plum">Komunitas Saat Teduh</h1>
+      <h1 className="text-2xl font-bold text-plum">Grup Saat Teduh</h1>
       <p className="mt-2 text-sm text-tinta-2">
         Grup Anda untuk saling menguatkan — bukan berkompetisi.
       </p>
 
       {error && (
         <p className="mt-4 rounded-xl border border-merah/30 bg-merah/5 px-4 py-3 text-sm text-merah">
-          Gagal memuat komunitas: {error.message}
+          Gagal memuat grup: {error.message}
         </p>
       )}
 
@@ -76,7 +60,7 @@ export default async function HalamanKomunitas() {
           return (
             <Link
               key={id}
-              href={`/komunitas/${id}`}
+              href={`/grup/${id}`}
               className="block rounded-2xl border border-garis-tipis bg-kertas p-4 transition hover:border-ungu/40 hover:shadow-sm"
             >
               <div className="flex items-center justify-between gap-3">
@@ -94,7 +78,7 @@ export default async function HalamanKomunitas() {
 
         {grup.size === 0 && !error && (
           <div className="rounded-2xl border border-dashed border-garis p-6 text-center text-sm text-tinta-2">
-            Belum ada komunitas. Buat grup pertama Anda, atau masuk pakai kode
+            Belum ada grup. Buat grup pertama Anda, atau masuk pakai kode
             undangan dari teman.
           </div>
         )}

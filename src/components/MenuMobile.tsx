@@ -92,10 +92,10 @@ export default function MenuMobile() {
             Topik
           </Link>
           <Link
-            href="/komunitas"
+            href="/grup"
             className="flex min-h-11 items-center rounded-xl px-3 text-[14px] font-medium text-tinta-2 transition hover:bg-lavender hover:text-plum"
           >
-            Komunitas
+            Grup
           </Link>
           <Link
             href="/tentang"
