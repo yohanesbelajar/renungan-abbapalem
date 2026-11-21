@@ -4,7 +4,7 @@ import DevotionCardItem from "@/components/DevotionCardItem";
 import { IkonCari } from "@/components/Ikon";
 import { DevotionCard } from "@/lib/types";
 import { cakupanDari, sanitize } from "@/lib/cari";
-import { BATAS_HASIL, kartuArsip } from "@/lib/arsip";
+import { PER_HALAMAN, kartuArsip } from "@/lib/arsip";
 import { semuaRingkas } from "@/lib/publik";
 
 // Data kartu & daftar tahun/bulan di-cache (lib/arsip.ts, lib/publik.ts).
@@ -57,12 +57,14 @@ export default async function ArchivePage({
     tema?: string;
     cari?: string;
     di?: string;
+    hal?: string;
   }>;
 }) {
   const sp = await searchParams;
   const cari = sanitize(sp.cari ?? "");
   const cakupan = cakupanDari(sp.di);
   const hanyaJudul = cakupan === "judul";
+  const hal = Math.max(1, parseInt(sp.hal ?? "1", 10) || 1);
 
   const tahun = sp.tahun && /^\d{4}$/.test(sp.tahun) ? sp.tahun : "";
   const bulan = sp.bulan && /^\d{4}-\d{2}$/.test(sp.bulan) ? sp.bulan : "";
@@ -82,13 +84,26 @@ export default async function ArchivePage({
   // Kartu (di-cache per kombinasi filter) + daftar tahun/bulan/tema (di-cache
   // global) diambil berbarengan.
   const [hasilKartu, opsi] = await Promise.all([
-    kartuArsip({ cari, cakupan, tahun, bulan, tema }),
+    kartuArsip({ cari, cakupan, tahun, bulan, tema, hal }),
     semuaRingkas(),
   ]);
 
   const devotions = hasilKartu.devotions;
   const longgar = hasilKartu.longgar;
   const galatPencarian = hasilKartu.galat;
+  const total = hasilKartu.total;
+  const jumlahHalaman = Math.max(1, Math.ceil(total / PER_HALAMAN));
+  // Tautan halaman harus membawa SEMUA filter yang sedang aktif.
+  const tautanHal = (n: number) => {
+    const q = new URLSearchParams();
+    if (sp.cari) q.set("cari", sp.cari);
+    if (sp.di) q.set("di", sp.di);
+    if (bulan) q.set("bulan", bulan);
+    if (tema) q.set("tema", tema);
+    if (n > 1) q.set("hal", String(n));
+    const s = q.toString();
+    return `/arsip${s ? `?${s}` : ""}#hasil`;
+  };
 
   // Hitung per tahun & per bulan + tema paling sering tiap bulan.
   const hitungTahun = new Map<string, number>();
@@ -209,7 +224,7 @@ export default async function ArchivePage({
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-2.5">
             <span className="text-[15px] text-tinta-2">
-              {devotions.length} saat teduh
+              {total} saat teduh
             </span>
             {temaBulanIni && (
               <Link
@@ -380,10 +395,20 @@ export default async function ArchivePage({
           hitungan di kepala halaman). */}
       {(mode === "cari" || mode === "tema") && (
         <p className={`${mode === "cari" ? "mt-3" : "mt-8"} text-[14.5px] text-tinta-2`}>
-          <strong className="font-semibold text-tinta">
-            {devotions.length}
-          </strong>{" "}
-          saat teduh {cari ? "ditemukan" : "cocok"}
+          {total === 0 ? (
+            <>Tidak ada hasil</>
+          ) : (
+            <>
+              <strong className="font-semibold text-tinta">{total}</strong>{" "}
+              saat teduh {cari ? "ditemukan" : "cocok"}
+              {jumlahHalaman > 1 && (
+                <>
+                  {" "}
+                  — halaman {hal} dari {jumlahHalaman}
+                </>
+              )}
+            </>
+          )}
           {cari && (
             <>
               {" "}
@@ -391,9 +416,6 @@ export default async function ArchivePage({
             </>
           )}
           {hanyaJudul && cari && <> di judul</>}
-          {devotions.length >= BATAS_HASIL && (
-            <> — batas {BATAS_HASIL} tercapai, persempit pencarian.</>
-          )}
         </p>
       )}
       {longgar && (
@@ -445,6 +467,27 @@ export default async function ArchivePage({
             ))
           )}
         </div>
+      )}
+
+      {modeHasil && jumlahHalaman > 1 && (
+        <nav
+          aria-label="Halaman hasil"
+          className="mt-10 flex flex-wrap items-center justify-center gap-2 border-t border-garis pt-6"
+        >
+          {hal > 1 && (
+            <Link href={tautanHal(hal - 1)} className="btn btn-halus px-4" rel="prev">
+              ← Sebelumnya
+            </Link>
+          )}
+          <span className="px-2 text-[14px] text-tinta-2">
+            Halaman {hal} dari {jumlahHalaman}
+          </span>
+          {hal < jumlahHalaman && (
+            <Link href={tautanHal(hal + 1)} className="btn btn-halus px-4" rel="next">
+              Berikutnya →
+            </Link>
+          )}
+        </nav>
       )}
 
       {modeHasil && galatPencarian && (
