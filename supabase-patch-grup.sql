@@ -32,11 +32,20 @@ create index if not exists community_members_user_idx
 alter table public.communities enable row level security;
 alter table public.community_members enable row level security;
 
+-- Pemeriksa keanggotaan: SECURITY supaya kebijakan tidak membaca tabel
+-- yang sama dengan dirinya (rekursi tak hingga / error 42P17).
+create or replace function public.anggota_grup(p_grup uuid, p_user uuid default auth.uid())
+returns boolean
+language sql security definer set search_path = public
+as $$
+  select exists (
+    select 1 from community_members m
+    where m.community_id = p_grup and m.user_id = p_user);
+$$;
+
 drop policy if exists "grup_lihat_anggota" on public.communities;
 create policy "grup_lihat_anggota" on public.communities
-  for select using (exists (
-    select 1 from public.community_members m
-    where m.community_id = id and m.user_id = auth.uid()));
+  for select using (public.anggota_grup(id) or created_by = auth.uid());
 
 drop policy if exists "grup_buat" on public.communities;
 create policy "grup_buat" on public.communities
@@ -50,10 +59,7 @@ create policy "grup_ubah_pemilik" on public.communities
 
 drop policy if exists "anggota_lihat" on public.community_members;
 create policy "anggota_lihat" on public.community_members
-  for select using (exists (
-    select 1 from public.community_members m
-    where m.community_id = community_members.community_id
-      and m.user_id = auth.uid()));
+  for select using (public.anggota_grup(community_members.community_id));
 
 drop policy if exists "anggota_keluar" on public.community_members;
 create policy "anggota_keluar" on public.community_members
@@ -173,3 +179,6 @@ grant execute on function public.join_community(text) to authenticated;
 
 revoke all on function public.komunitas_progres() from public, anon;
 grant execute on function public.komunitas_progres() to authenticated;
+
+revoke all on function public.anggota_grup(uuid, uuid) from public, anon;
+grant execute on function public.anggota_grup(uuid, uuid) to authenticated;

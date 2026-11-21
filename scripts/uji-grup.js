@@ -1,0 +1,248 @@
+#!/usr/bin/env node
+/**
+ * Uji fitur KOMUNITAS — jalankan setelah supabase-patch-grup.sql diterapkan.
+ *
+ *   NODE_PATH=/home/hermes/.hermes/hermes-agent/node_modules node scripts/uji-grup.js
+ *
+ * Env opsional: BASE (default http://localhost:3000)
+ * Membuat 3 akun uji lewat admin API, lalu menguji:
+ *   1. A membuat grup → dapat kode undangan
+ *   2. B bergabung pakai kode → melihat A + status baca hari ini
+ *   3. C (bukan anggota) TIDAK bisa membuka halaman grup (404)
+ *   4. C tidak bisa membaca tabel grup/anggota/progres lewat API
+ *   5. B keluar → hilang dari daftar A
+ *   6. A (pemilik) keluar → B jadi pemilik
+ *   7. B (anggota terakhir) keluar → grup ikut terhapus
+ * Semua akun uji dihapus di akhir (hapusan berantai membersihkan sisanya).
+ */
+const fs = require("fs");
+const path = require("path");
+const { chromium } = require("playwright");
+
+const BASE = process.env.BASE || "http://localhost:3000";
+const CHROME = "/usr/bin/google-chrome";
+
+// baca .env.local
+const env = {};
+for (const line of fs.readFileSync(path.join(__dirname, "..", ".env.local"), "utf8").split("\n")) {
+  const s = line.trim();
+  if (s && !s.startsWith("#") && s.includes("=")) {
+    const i = s.indexOf("=");
+    env[s.slice(0, i)] = s.slice(i + 1).trim().replace(/^"|"$/g, "");
+  }
+}
+const URL_SB = env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, "");
+const ANON = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SERVICE = env.SUPABASE_SERVICE_ROLE_KEY;
+
+const HASIL = [];
+function cek(nama, ok, detail = "") {
+  HASIL.push({ nama, ok });
+  console.log(`${ok ? "OK  " : "GAGAL"}  ${nama}${detail ? " — " + detail : ""}`);
+}
+
+async function admin(method, p, body) {
+  const r = await fetch(`${URL_SB}/auth/v1/admin${p}`, {
+    method,
+    headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const t = await r.text();
+  if (!r.ok) throw new Error(`${method} ${p} → ${r.status} ${t.slice(0, 300)}`);
+  if (!t) return null;
+  try { return JSON.parse(t); } catch (e) { throw new Error(`${method} ${p} → ${r.status} body kosong/bukan JSON: ${t.slice(0, 120)}`); }
+}
+
+async function token(email, password) {
+  const r = await fetch(`${URL_SB}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: ANON, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const t = await r.text();
+  if (!r.ok) throw new Error(`token ${email} → ${r.status} ${t.slice(0, 300)}`);
+  return JSON.parse(t).access_token;
+}
+
+async function rest(tkn, p, opts = {}) {
+  const r = await fetch(`${URL_SB}/rest/v1${p}`, {
+    ...opts,
+    headers: { apikey: opts.apikey || ANON, Authorization: `Bearer ${tkn}`, "Content-Type": "application/json", ...(opts.headers || {}) },
+  });
+  const t = await r.text();
+  let body = null;
+  if (t) { try { body = JSON.parse(t); } catch { body = { _teks: t.slice(0, 200) }; } }
+  return { status: r.status, body };
+}
+
+const SANDI = "UjiGrup2026!";
+const stamp = Date.now();
+const akun = {
+  a: { email: `uji-grup-a-${stamp}@example.com`, nama: "Uji Alfa" },
+  b: { email: `uji-grup-b-${stamp}@example.com`, nama: "Uji Beta" },
+  c: { email: `uji-grup-c-${stamp}@example.com`, nama: "Uji Cakra" },
+};
+
+async function siapkan(page) {
+  await page.waitForLoadState("networkidle").catch(() => {});
+}
+
+async function masuk(page, email) {
+  await page.goto(`${BASE}/masuk`, { waitUntil: "domcontentloaded" });
+  await page.fill("#email", email);
+  await page.fill("#password", SANDI);
+  await Promise.all([
+    page.waitForURL((u) => !u.pathname.startsWith("/masuk"), { timeout: 20000 }),
+    page.click('button[type="submit"]'),
+  ]);
+}
+
+(async () => {
+  const browser = await chromium.launch({ executablePath: CHROME, headless: true });
+  try {
+    // ---- siapkan akun uji ----
+    for (const k of Object.keys(akun)) {
+      const u = await admin("POST", "/users", { email: akun[k].email, password: SANDI, email_confirm: true });
+      akun[k].id = u.id;
+    }
+    // progres baca hari ini untuk A dan B (supaya papan "hari ini" teruji)
+    const hariIni = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
+    const dev = await rest(SERVICE, `/devotions?select=id&devotion_date=eq.${hariIni}&status=eq.published&limit=1`, { apikey: SERVICE });
+    const devotionId = dev.status === 200 && dev.body.length ? dev.body[0].id : null;
+    if (devotionId) {
+      for (const k of ["a", "b"]) {
+        await rest(SERVICE, "/reading_progress", {
+          apikey: SERVICE, method: "POST",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({ user_id: akun[k].id, devotion_id: devotionId }),
+        });
+      }
+    } else {
+      console.log("CATATAN: saat teduh hari ini belum terbit — uji status 'hari ini' dilewati");
+    }
+
+    // ---- 1. A membuat grup ----
+    const ctxA = await browser.newContext();
+    const pageA = await ctxA.newPage();
+    await masuk(pageA, akun.a.email);
+    await pageA.goto(`${BASE}/komunitas`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageA);
+    await pageA.fill("#nama-grup", "Grup Uji Komunitas");
+    await pageA.click('form:has(#nama-grup) button[type="submit"]');
+    await pageA.waitForURL(/\/komunitas\/[0-9a-f-]{36}$/, { timeout: 20000 });
+    const idGrup = pageA.url().split("/komunitas/")[1];
+    cek("A membuat grup dan masuk ke halaman grup", true, idGrup);
+    const kode = (await pageA.textContent("p.font-mono"))?.trim() || "";
+    cek("halaman grup menampilkan kode undangan", /^[A-Z0-9]{6,12}$/.test(kode), kode);
+
+    // ---- 2. B bergabung ----
+    const tB = await token(akun.b.email, SANDI);
+    const sebelumGabung = await rest(tB, "/communities?select=id");
+    cek("B (belum gabung) tidak bisa melihat daftar grup lewat API", sebelumGabung.status === 200 && sebelumGabung.body.length === 0, `status ${sebelumGabung.status}, ${sebelumGabung.body.length} baris`);
+
+    const ctxB = await browser.newContext();
+    const pageB = await ctxB.newPage();
+    await masuk(pageB, akun.b.email);
+    await pageB.goto(`${BASE}/komunitas`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageB);
+    await pageB.fill("#kode-undang", kode);
+    await pageB.click('form:has(#kode-undang) button[type="submit"]');
+    try {
+      await pageB.waitForURL(new RegExp(`/komunitas/${idGrup}$`), { timeout: 20000 });
+    } catch (e) {
+      console.log("DIAG url B:", pageB.url());
+      console.log("DIAG isi B:", ((await pageB.textContent("body")) || "").replace(/\s+/g, " ").slice(0, 400));
+      throw e;
+    }
+    cek("B bergabung lewat kode undangan", true);
+    await siapkan(pageB);
+    const isiB = await pageB.content();
+    const panggilanA = akun.a.email.split("@")[0];
+    cek("B melihat nama anggota lain", isiB.includes(panggilanA), `mencari ${panggilanA}`);
+    if (devotionId) cek("B melihat penanda 'sudah baca' milik A", isiB.includes("Sudah baca"));
+
+    // ---- 3. C bukan anggota: halaman grup harus 404 ----
+    const ctxC = await browser.newContext();
+    const pageC = await ctxC.newPage();
+    await masuk(pageC, akun.c.email);
+    const rC = await pageC.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageC);
+    const isiC = await pageC.content();
+    cek("C (bukan anggota) tidak melihat isi grup sama sekali",
+      !isiC.includes("Grup Uji Komunitas") && !isiC.includes(panggilanA),
+      `status ${rC.status()}, panjang isi ${isiC.length}`);
+
+    // ---- 4. C tidak bisa membaca data lewat API ----
+    const tC = await token(akun.c.email, SANDI);
+    const cGrup = await rest(tC, "/communities?select=id");
+    const cAnggota = await rest(tC, "/community_members?select=*");
+    const cProgres = await rest(tC, "/reading_progress?select=*");
+    cek("C tidak bisa membaca tabel grup", cGrup.body.length === 0, `${cGrup.body.length} baris`);
+    cek("C tidak bisa membaca tabel anggota", cAnggota.body.length === 0, `${cAnggota.body.length} baris`);
+    cek("C tidak bisa membaca progres bacaan orang lain", cProgres.body.length === 0, `${cProgres.body.length} baris`);
+    const cFungsi = await rest(tC, "/rpc/komunitas_progres", { method: "POST", body: "{}" });
+    cek("fungsi progres mengembalikan nol baris untuk C", Array.isArray(cFungsi.body) && cFungsi.body.length === 0, `${(cFungsi.body || []).length} baris`);
+
+    // ---- 5. B keluar ----
+    pageC.on("dialog", (d) => d.accept());
+    await pageB.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageB);
+    pageB.on("dialog", (d) => d.accept());
+    await pageB.click('button:has-text("Keluar dari grup")');
+    await pageB.waitForURL(/\/komunitas$/, { timeout: 20000 });
+    await pageB.reload({ waitUntil: "domcontentloaded" });
+    await siapkan(pageB);
+    const daftarB = await pageB.content();
+    cek("B keluar dan grup hilang dari daftarnya", !daftarB.includes("Grup Uji Komunitas"));
+    const sisaB = await rest(tB, "/community_members?select=user_id");
+    cek("B tidak lagi tercatat sebagai anggota", sisaB.body.length === 0, `${sisaB.body.length} baris`);
+
+    // ---- 6. B bergabung lagi, lalu A (pemilik) keluar → B jadi pemilik ----
+    await pageB.goto(`${BASE}/komunitas`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageB);
+    await pageB.fill("#kode-undang", kode);
+    await pageB.click('form:has(#kode-undang) button[type="submit"]');
+    await pageB.waitForURL(new RegExp(`/komunitas/${idGrup}$`), { timeout: 20000 });
+    await pageA.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageA);
+    pageA.on("dialog", (d) => d.accept());
+    await pageA.click('button:has-text("Keluar dari grup")');
+    await pageA.waitForURL(/\/komunitas$/, { timeout: 20000 });
+    await pageB.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageB);
+    const isiSetelah = await pageB.content();
+    if (!isiSetelah.includes("Grup Uji Komunitas")) {
+      console.log("DIAG isi setelah A keluar:", isiSetelah.replace(/\s+/g, " ").slice(0, 400));
+    }
+    cek("B masih bisa membuka grup setelah pemilik keluar", isiSetelah.includes("Grup Uji Komunitas"));
+    cek("B otomatis jadi pemilik", isiSetelah.includes("Pemilik"));
+
+    // ---- 7. B (terakhir) keluar → grup terhapus ----
+    await pageB.click('button:has-text("Keluar dari grup")');
+    await pageB.waitForURL(/\/komunitas$/, { timeout: 20000 });
+    await siapkan(pageB);
+    await pageB.goto(`${BASE}/komunitas/${idGrup}`, { waitUntil: "domcontentloaded" });
+    await siapkan(pageB);
+    const isiHapus = await pageB.content();
+    cek("grup ikut terhapus saat anggota terakhir keluar", !isiHapus.includes("Grup Uji Komunitas"));
+    const tA = await token(akun.a.email, SANDI);
+    const sisaGrup = await rest(tA, "/communities?select=id");
+    cek("tidak ada sisa grup uji di database", sisaGrup.body.length === 0, `${sisaGrup.body.length} baris`);
+
+    await ctxA.close(); await ctxB.close(); await ctxC.close();
+  } finally {
+    await browser.close();
+    // ---- bersihkan akun uji ----
+    for (const k of Object.keys(akun)) {
+      if (!akun[k].id) continue;
+      try { await admin("DELETE", `/users/${akun[k].id}`); } catch (e) { console.log("gagal hapus", k, e.message); }
+    }
+  }
+
+  const gagal = HASIL.filter((h) => !h.ok).length;
+  console.log(`\nRingkasan: ${HASIL.length - gagal} lulus, ${gagal} gagal dari ${HASIL.length} pemeriksaan`);
+  process.exit(gagal ? 1 : 0);
+})().catch((e) => {
+  console.error("ERROR:", e);
+  process.exit(1);
+});
