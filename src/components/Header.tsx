@@ -40,6 +40,12 @@ export default function Header() {
             Topik
           </Link>
           <Link
+            href="/komunitas"
+            className="hidden min-h-11 items-center rounded-full px-3 text-tinta-2 transition hover:bg-lavender hover:text-plum sm:inline-flex"
+          >
+            Komunitas
+          </Link>
+          <Link
             href="/tentang"
             className="hidden min-h-11 items-center rounded-full px-3 text-tinta-2 transition hover:bg-lavender hover:text-plum sm:inline-flex"
           >

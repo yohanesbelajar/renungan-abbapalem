@@ -92,6 +92,12 @@ export default function MenuMobile() {
             Topik
           </Link>
           <Link
+            href="/komunitas"
+            className="flex min-h-11 items-center rounded-xl px-3 text-[14px] font-medium text-tinta-2 transition hover:bg-lavender hover:text-plum"
+          >
+            Komunitas
+          </Link>
+          <Link
             href="/tentang"
             className="flex min-h-11 items-center rounded-xl px-3 text-[14px] font-medium text-tinta-2 transition hover:bg-lavender hover:text-plum"
           >
