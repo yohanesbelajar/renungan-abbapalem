@@ -182,3 +182,35 @@ grant execute on function public.komunitas_progres() to authenticated;
 
 revoke all on function public.anggota_grup(uuid, uuid) from public, anon;
 grant execute on function public.anggota_grup(uuid, uuid) to authenticated;
+
+-- 8. LANJUTAN 21 Nov 2026: tautan undangan + peran admin ------------------
+alter table public.community_members
+  drop constraint if exists community_members_role_check;
+alter table public.community_members
+  add constraint community_members_role_check
+  check (role in ('owner', 'admin', 'member'));
+
+-- Tautan undangan memakai token panjang (24 karakter hex / 96 bit)
+alter table public.communities alter column invite_code set default
+  upper(substr(replace(gen_random_uuid()::text, '-', '') ||
+               replace(gen_random_uuid()::text, '-', ''), 1, 24));
+
+create or replace function public.peran_grup(p_grup uuid, p_user uuid default auth.uid())
+returns text
+language sql security definer set search_path = public
+as $$
+  select m.role from community_members m
+   where m.community_id = p_grup and m.user_id = p_user;
+$$;
+
+-- Hanya pemilik yang boleh mengubah peran anggota lain; pemilik tidak
+-- bisa mengubah peran dirinya sendiri sehingga grup selalu punya pemilik.
+drop policy if exists "anggota_ubah_peran" on public.community_members;
+create policy "anggota_ubah_peran" on public.community_members
+  for update using (public.peran_grup(community_id) = 'owner')
+  with check (public.peran_grup(community_id) = 'owner'
+              and not (user_id = auth.uid())
+              and role in ('owner', 'admin', 'member'));
+
+revoke all on function public.peran_grup(uuid, uuid) from public, anon;
+grant execute on function public.peran_grup(uuid, uuid) to authenticated;

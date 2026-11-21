@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import KodeUndang from "@/components/grup/KodeUndang";
+import TautanUndang from "@/components/grup/TautanUndang";
+import UbahPeran from "@/components/grup/UbahPeran";
 import TinggalkanGrup from "@/components/grup/TinggalkanGrup";
 import type { BarisKomunitas } from "../page";
 
@@ -43,6 +44,11 @@ export default async function HalamanGrup({
   const kode = anggota[0].kode_undang;
   const sudah = anggota.filter((a) => a.hari_ini).length;
 
+  const peranSaya =
+    anggota.find((a) => a.user_id === user.id)?.peran ?? "member";
+  const bolehUndang = peranSaya === "owner" || peranSaya === "admin";
+  const sayaPemilik = peranSaya === "owner";
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <Link
@@ -59,8 +65,14 @@ export default async function HalamanGrup({
             {anggota.length} anggota · {sudah} sudah baca hari ini
           </p>
         </div>
-        <KodeUndang kode={kode} />
       </div>
+
+      {/* Tautan undangan hanya untuk pemilik/admin grup */}
+      {bolehUndang && (
+        <div className="mt-4">
+          <TautanUndang kode={kode} />
+        </div>
+      )}
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-garis-tipis bg-kertas">
         <div className="flex items-center justify-between border-b border-garis-tipis bg-krem-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-tinta-3">
@@ -81,20 +93,34 @@ export default async function HalamanGrup({
                       Pemilik
                     </span>
                   )}
+                  {a.peran === "admin" && (
+                    <span className="ml-2 rounded-full bg-lavender px-2 py-0.5 text-[11px] font-medium text-plum">
+                      Admin
+                    </span>
+                  )}
                 </p>
                 <p className="text-xs text-tinta-3">
                   {a.total_selesai} saat teduh selesai
                 </p>
               </div>
-              <span
-                className={
-                  a.hari_ini
-                    ? "shrink-0 rounded-full bg-[#e7f6ec] px-3 py-1 text-xs font-semibold text-[#1e7a44]"
-                    : "shrink-0 rounded-full bg-krem-3 px-3 py-1 text-xs text-tinta-3"
-                }
-              >
-                {a.hari_ini ? "✓ Sudah baca" : "Belum"}
-              </span>
+              <div className="flex shrink-0 items-center gap-3">
+                <span
+                  className={
+                    a.hari_ini
+                      ? "rounded-full bg-[#e7f6ec] px-3 py-1 text-xs font-semibold text-[#1e7a44]"
+                      : "rounded-full bg-krem-3 px-3 py-1 text-xs text-tinta-3"
+                  }
+                >
+                  {a.hari_ini ? "✓ Sudah baca" : "Belum"}
+                </span>
+                {sayaPemilik && a.user_id !== user.id && (
+                  <UbahPeran
+                    grupId={id}
+                    userId={a.user_id}
+                    peranSekarang={a.peran}
+                  />
+                )}
+              </div>
             </li>
           ))}
         </ul>

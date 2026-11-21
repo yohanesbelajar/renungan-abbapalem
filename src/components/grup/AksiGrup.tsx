@@ -4,13 +4,13 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-// Formulir pembuatan grup dan gabung pakai kode undangan.
+// Formulir pembuatan grup. Gabung lewat tautan: pengunjung membuka
+// /grup/gabung/<token> (lihat halaman gabung/[token]).
 export default function AksiGrup() {
   const router = useRouter();
   const supabase = createClient();
 
   const [nama, setNama] = useState("");
-  const [kode, setKode] = useState("");
   const [pesan, setPesan] = useState("");
   const [sibuk, setSibuk] = useState(false);
 
@@ -46,34 +46,8 @@ export default function AksiGrup() {
     router.refresh();
   }
 
-  async function gabung(e: FormEvent) {
-    e.preventDefault();
-    setPesan("");
-    const k = kode.trim().toUpperCase();
-    if (!k) {
-      setPesan("Isi kode undangan dulu.");
-      return;
-    }
-    setSibuk(true);
-    const { data, error } = await supabase.rpc("join_community", {
-      p_kode: k,
-    });
-    setSibuk(false);
-    if (error) {
-      setPesan(`Gagal bergabung: ${error.message}`);
-      return;
-    }
-    if (!data) {
-      setPesan("Kode itu tidak ditemukan. Periksa lagi hurufnya.");
-      return;
-    }
-    setKode("");
-    router.push(`/grup/${data}`);
-    router.refresh();
-  }
-
   return (
-    <div className="mt-8 grid gap-4 sm:grid-cols-2">
+    <div className="mt-8">
       <form
         onSubmit={buatGrup}
         className="rounded-2xl border border-garis-tipis bg-kertas p-4"
@@ -99,37 +73,14 @@ export default function AksiGrup() {
         >
           {sibuk ? "Memproses…" : "Buat grup"}
         </button>
-      </form>
-
-      <form
-        onSubmit={gabung}
-        className="rounded-2xl border border-garis-tipis bg-kertas p-4"
-      >
-        <h2 className="font-semibold text-plum">Gabung dengan kode</h2>
-        <label htmlFor="kode-undang" className="mt-3 block text-sm text-tinta-2">
-          Kode undangan
-        </label>
-        <input
-          id="kode-undang"
-          type="text"
-          required
-          maxLength={12}
-          value={kode}
-          onChange={(e) => setKode(e.target.value.toUpperCase())}
-          placeholder="mis. K4M7P2Q9"
-          className="mt-1 w-full rounded border border-garis bg-cream px-3 py-2.5 font-mono uppercase tracking-widest"
-        />
-        <button
-          type="submit"
-          disabled={sibuk}
-          className="btn btn-sekunder mt-3 w-full justify-center disabled:opacity-60"
-        >
-          {sibuk ? "Memproses…" : "Gabung"}
-        </button>
+        <p className="mt-3 text-xs text-tinta-3">
+          Setelah grup jadi, Anda sebagai pemilik otomatis mendapat tautan
+          undangan untuk dibagikan ke teman.
+        </p>
       </form>
 
       {pesan && (
-        <p className="sm:col-span-2 rounded-xl border border-garis bg-lavender px-4 py-3 text-sm text-tinta">
+        <p className="mt-4 rounded-xl border border-garis bg-lavender px-4 py-3 text-sm text-tinta">
           {pesan}
         </p>
       )}
