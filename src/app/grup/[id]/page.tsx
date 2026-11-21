@@ -77,7 +77,7 @@ export default async function HalamanGrup({
       <div className="mt-6 overflow-hidden rounded-2xl border border-garis-tipis bg-kertas">
         <div className="flex items-center justify-between border-b border-garis-tipis bg-krem-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-tinta-3">
           <span>Anggota</span>
-          <span>Saat Teduh hari ini</span>
+          <span>Hari ini · streak</span>
         </div>
         <ul className="divide-y divide-garis-tipis">
           {anggota.map((a) => (
@@ -99,11 +99,14 @@ export default async function HalamanGrup({
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-tinta-3">
-                  {a.total_selesai} saat teduh selesai
-                </p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
+                <span
+                  title="Baca beruntun sampai hari ini"
+                  className="font-semibold text-[#c77700]"
+                >
+                  ✳ {a.streak}
+                </span>
                 <span
                   className={
                     a.hari_ini

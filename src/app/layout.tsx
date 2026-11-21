@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PencatatKunjungan from "@/components/PencatatKunjungan";
 import DaftarServiceWorker from "@/components/DaftarServiceWorker";
+import EfekKlik from "@/components/EfekKlik";
 import { SITE_NAME } from "@/lib/constants";
 import { SITE_URL } from "@/lib/topik";
 
@@ -96,6 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <PencatatKunjungan />
         <DaftarServiceWorker />
+        <EfekKlik />
       </body>
     </html>
   );

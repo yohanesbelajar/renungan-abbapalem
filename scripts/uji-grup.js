@@ -92,12 +92,34 @@ async function siapkan(page) {
 
 async function masuk(page, email) {
   await page.goto(`${BASE}/masuk`, { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => {});
   await page.fill("#email", email);
   await page.fill("#password", SANDI);
-  await Promise.all([
-    page.waitForURL((u) => !u.pathname.startsWith("/masuk"), { timeout: 20000 }),
-    page.click('button[type="submit"]'),
-  ]);
+  for (let percobaan = 0; percobaan < 3; percobaan++) {
+    await page.click('button[type="submit"]');
+    try {
+      await page.waitForURL((u) => !u.pathname.startsWith("/masuk"), { timeout: 30000 });
+      return;
+    } catch (e) {
+      if (page.url().includes("/masuk") && !(await page.locator("#email").count())) break;
+      console.log(`CATATAN: masuk belum pindah halaman (percobaan ${percobaan + 1})`);
+    }
+  }
+  if (page.url().includes("/masuk")) throw new Error(`login ${email} gagal pindah halaman`);
+}
+
+async function keluar(page) {
+  for (let coba = 0; coba < 3; coba++) {
+    await page.click('button:has-text("Keluar dari grup")');
+    try {
+      await page.waitForURL(/\/grup$/, { timeout: 20000 });
+      return;
+    } catch (e) {
+      if (coba === 2) throw e;
+      console.log("CATATAN: klik keluar belum pindah halaman, diulang");
+      await siapkan(page);
+    }
+  }
 }
 
 async function gabungLewatTautan(page, tokenUndang, idGrup) {
@@ -128,6 +150,23 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
       }
     } else {
       console.log("CATATAN: saat teduh hari ini belum terbit — uji status 'hari ini' dilewati");
+    }
+
+    // B juga membaca KEMARIN → streak B harus 2; A hanya hari ini → streak 1
+    const hariIniStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta" }).format(new Date());
+    const km = new Date(hariIniStr + "T12:00:00Z");
+    km.setUTCDate(km.getUTCDate() - 1);
+    const kemarinStr = km.toISOString().slice(0, 10);
+    const devKemarin = await rest(SERVICE, `/devotions?select=id&devotion_date=eq.${kemarinStr}&status=eq.published&limit=1`, { apikey: SERVICE });
+    const bacaKemarin = devKemarin.status === 200 && devKemarin.body.length > 0;
+    if (devotionId && bacaKemarin) {
+      await rest(SERVICE, "/reading_progress", {
+        apikey: SERVICE, method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ user_id: akun.b.id, devotion_id: devKemarin.body[0].id }),
+      });
+    } else {
+      console.log("CATATAN: saat teduh kemarin tidak ada — uji streak 2 dilewati");
     }
 
     const tB = await token(akun.b.email, SANDI);
@@ -186,6 +225,11 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
       isiB.includes(akun.a.username) && !isiB.includes(panggilanA),
       `mencari ${akun.a.username}`);
     if (devotionId) cek("B melihat penanda 'sudah baca' milik A", isiB.includes("Sudah baca"));
+    const barisB = (await pageB.locator("li").allInnerTexts()).join(" | ");
+    cek("papan menampilkan streak (bintang): A = 1, B = 2",
+      barisB.includes("✳ 1") && (!bacaKemarin || barisB.includes("✳ 2")),
+      `streak hari kemarin ${bacaKemarin ? "teruji" : "dilewati (tidak ada renungan kemarin)"}`);
+    cek("info total selesai TIDAK lagi ditampilkan", !isiB.includes("saat teduh selesai"));
     const kotakB = await pageB.locator("[data-tautan-undangan]").count();
     cek("anggota biasa TIDAK melihat tautan undangan", kotakB === 0, `${kotakB} kotak`);
 
@@ -229,8 +273,17 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     await pageB.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     pageB.on("dialog", (d) => d.accept());
-    await pageB.click('button:has-text("Keluar dari grup")');
-    await pageB.waitForURL(/\/grup$/, { timeout: 20000 });
+    for (let coba = 0; coba < 3; coba++) {
+      await pageB.click('button:has-text("Keluar dari grup")');
+      try {
+        await pageB.waitForURL(/\/grup$/, { timeout: 20000 });
+        break;
+      } catch (e) {
+        if (coba === 2) throw e;
+        console.log("CATATAN: klik keluar belum pindah halaman, diulang");
+        await siapkan(pageB);
+      }
+    }
     await pageB.reload({ waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     const daftarB = await pageB.content();
@@ -259,8 +312,7 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     await pageA.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageA);
     pageA.on("dialog", (d) => d.accept());
-    await pageA.click('button:has-text("Keluar dari grup")');
-    await pageA.waitForURL(/\/grup$/, { timeout: 20000 });
+    await keluar(pageA);
     await pageB.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);
     const isiSetelah = await pageB.content();
@@ -271,8 +323,7 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     cek("B otomatis jadi pemilik", isiSetelah.includes("Pemilik"));
 
     // ---- 9. B (terakhir) keluar → grup terhapus ----
-    await pageB.click('button:has-text("Keluar dari grup")');
-    await pageB.waitForURL(/\/grup$/, { timeout: 20000 });
+    await keluar(pageB);
     await siapkan(pageB);
     await pageB.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageB);

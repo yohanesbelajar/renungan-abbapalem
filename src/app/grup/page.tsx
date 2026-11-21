@@ -15,6 +15,7 @@ export type BarisKomunitas = {
   bergabung: string;
   hari_ini: boolean;
   total_selesai: number;
+  streak: number;
 };
 
 export default async function HalamanKomunitas() {

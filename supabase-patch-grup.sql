@@ -214,3 +214,75 @@ create policy "anggota_ubah_peran" on public.community_members
 
 revoke all on function public.peran_grup(uuid, uuid) from public, anon;
 grant execute on function public.peran_grup(uuid, uuid) to authenticated;
+
+-- 9. LANJUTAN 21 Nov 2026: nama unik + streak di papan grup ---------
+-- =============================================================
+-- Nama unik (username) untuk profil — 21 Nov 2026
+-- =============================================================
+alter table public.profiles
+  add column if not exists username text;
+
+-- Unik tanpa membedakan huruf besar/kecil; boleh kosong (NULL) berkali-kali
+create unique index if not exists profiles_username_uniq
+  on public.profiles (lower(username))
+  where username is not null;
+
+
+-- =============================================================
+-- Streak (baca beruntun) di papan progres grup — 21 Nov 2026
+-- Streak = jumlah hari beruntun sampai HARI INI yang devotionalnya
+-- dibaca (devotion_date hari ini dulu, baru kemarin, dst).
+-- Belum baca hari ini -> streak 0. Baca hari ini + kemarin -> 2.
+-- =============================================================
+drop function if exists public.komunitas_progres();
+create function public.komunitas_progres()
+returns table (
+  grup_id     uuid,
+  grup_nama   text,
+  kode_undang text,
+  user_id     uuid,
+  nama        text,
+  peran       text,
+  bergabung   timestamptz,
+  hari_ini    boolean,
+  total_selesai bigint,
+  streak      bigint
+)
+language sql security definer set search_path = public
+as $$
+  select m.community_id,
+         c.name,
+         c.invite_code,
+         m.user_id,
+         coalesce(nullif(btrim(p.username), ''),
+                  nullif(btrim(p.display_name), ''),
+                  'Anggota'),
+         m.role,
+         m.joined_at,
+         exists (
+           select 1 from reading_progress rp
+           join devotions d on d.id = rp.devotion_id
+           where rp.user_id = m.user_id
+             and d.devotion_date = (now() at time zone 'Asia/Jakarta')::date
+             and d.status = 'published'),
+         (select count(*) from reading_progress rp2 where rp2.user_id = m.user_id),
+         st.streak
+  from community_members m
+  join communities c on c.id = m.community_id
+  join profiles p on p.id = m.user_id
+  cross join lateral (
+    select coalesce(min(g), 367) as streak
+    from generate_series(0, 366) g
+    where not exists (
+      select 1
+      from reading_progress rp
+      join devotions d on d.id = rp.devotion_id
+      where rp.user_id = m.user_id
+        and d.devotion_date = (now() at time zone 'Asia/Jakarta')::date - g
+    )
+  ) st
+  where exists (
+    select 1 from community_members me
+    where me.community_id = m.community_id and me.user_id = auth.uid())
+  order by c.name, m.joined_at;
+$$;
