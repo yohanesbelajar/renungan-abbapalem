@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import { semuaTerbit } from "@/lib/publik";
+import { kartuTema } from "@/lib/tema-kartu";
 import { kelompokTema, SITE_URL, slugTema } from "@/lib/topik";
 import type { DevotionCard } from "@/lib/types";
 import { formatTanggalID } from "@/lib/dates";
@@ -60,16 +60,9 @@ export default async function TopikPage({
   if (!hasil) notFound();
   const { topik } = hasil;
 
-  // Kartu butuh hearts_count — diambil sekali untuk tema ini saja.
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("devotions")
-    .select("slug, devotion_date, title, theme, hearts_count")
-    .eq("status", "published")
-    .eq("theme", topik.tema)
-    .order("devotion_date", { ascending: false })
-    .limit(400);
-  const kartu: DevotionCard[] = (data as DevotionCard[] | null) ?? [];
+  // Kartu butuh hearts_count — diambil sekali untuk tema ini, lewat cache
+  // anonim supaya halaman bisa masuk cache CDN.
+  const kartu: DevotionCard[] = await kartuTema(topik.tema);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">

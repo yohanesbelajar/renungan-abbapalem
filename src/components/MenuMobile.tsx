@@ -4,13 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import TombolTema from "./TombolTema";
+import { muatSesi } from "@/lib/sesi-klien";
 
 // Menu tambahan khusus layar HP (< sm), tempat tautan "Tentang"/"Admin"
 // disembunyikan dari bilah atas karena ruang tidak cukup.
-export default function MenuMobile({ isStaff }: { isStaff: boolean }) {
+// Status staf dibaca di browser (server tidak lagi menyentuh cookie).
+export default function MenuMobile() {
   const [buka, setBuka] = useState(false);
+  const [staf, setStaf] = useState(false);
   const kotak = useRef<HTMLDivElement>(null);
   const jalur = usePathname();
+
+  useEffect(() => {
+    let batal = false;
+    muatSesi().then((s) => {
+      if (!batal) setStaf(s.staf);
+    });
+    return () => {
+      batal = true;
+    };
+  }, []);
 
   useEffect(() => setBuka(false), [jalur]);
 
@@ -84,7 +97,7 @@ export default function MenuMobile({ isStaff }: { isStaff: boolean }) {
           >
             Tentang
           </Link>
-          {isStaff && (
+          {staf && (
             <Link
               href="/admin"
               className="flex min-h-11 items-center rounded-xl px-3 text-[14px] font-medium text-tinta-2 transition hover:bg-lavender hover:text-plum"
