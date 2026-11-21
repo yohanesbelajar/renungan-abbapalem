@@ -217,6 +217,8 @@ async function gabungLewatTautan(page, tokenUndang, idGrup) {
     await pageA.goto(`${BASE}/grup/${idGrup}`, { waitUntil: "domcontentloaded" });
     await siapkan(pageA);
     await pageA.click('button:has-text("Jadikan admin")');
+    // tunggu sampai tombolnya berubah jadi "Jadikan anggota" (penanda promosi selesai)
+    await pageA.waitForSelector('button:has-text("Jadikan anggota")', { timeout: 20000 });
     await siapkan(pageA);
     const isiA2 = await pageA.content();
     cek("A mengangkat B jadi admin", isiA2.includes("Admin"));
