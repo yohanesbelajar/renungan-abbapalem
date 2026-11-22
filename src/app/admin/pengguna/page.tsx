@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import KelolaPengguna, { type BarisPengguna } from "@/components/KelolaPengguna";
+import Kepala, { KotakAngka } from "@/components/admin/Kepala";
+import { IkonOrang } from "@/components/admin/IkonAdmin";
+import { IkonCentang } from "@/components/admin/IkonAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -25,28 +28,25 @@ export default async function AdminUsersPage() {
   const baris = ((data ?? []) as BarisPengguna[]).filter((u) => u.id);
   const aktif = baris.filter((u) => u.status !== "ditendang").length;
   const ditendang = baris.length - aktif;
+  const staf = baris.filter((u) => ["admin", "superadmin", "editor"].includes(u.peran)).length;
 
   return (
-    <div>
-      <h1 className="text-xl font-bold text-slate-900">Pengguna</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Semua akun yang terdaftar di situs. Ubah peran, tendang (login diblokir, data utuh, bisa
-        dipulihkan), atau hapus permanen
-        {superadmin ? "" : " — hapus permanen hanya oleh super admin"}.
-      </p>
+    <div className="space-y-4">
+      <Kepala
+        label="Akun"
+        judul="Pengguna"
+        keterangan="Semua akun terdaftar. Ubah peran, blokir login dengan Tendang (data utuh, bisa dipulihkan), atau hapus permanen bila benar-benar perlu."
+      />
 
-      <div className="mt-3 flex flex-wrap gap-2 text-xs">
-        <span className="rounded-full bg-lavender px-3 py-1 font-semibold text-plum">
-          {baris.length} akun
-        </span>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">{aktif} aktif</span>
-        <span className="rounded-full bg-merah/10 px-3 py-1 font-semibold text-merah">
-          {ditendang} ditendang
-        </span>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KotakAngka label="Total akun" nilai={baris.length} Ikon={IkonOrang} nada="ungu" />
+        <KotakAngka label="Aktif" nilai={aktif} Ikon={IkonCentang} nada="hijau" />
+        <KotakAngka label="Staf" nilai={staf} nada="netral" />
+        <KotakAngka label="Ditendang" nilai={ditendang} nada="senja" />
       </div>
 
       {error && (
-        <p className="mt-4 rounded-xl border border-merah/30 bg-merah/5 px-4 py-3 text-sm text-merah">
+        <p className="rounded-xl border border-merah/30 bg-merah/5 px-4 py-3 text-sm text-merah">
           Gagal memuat pengguna: {error.message}
         </p>
       )}
@@ -54,14 +54,19 @@ export default async function AdminUsersPage() {
       {baris.length > 0 ? (
         <KelolaPengguna baris={baris} sayaId={user.id} sayaPeran={peran} />
       ) : (
-        !error && <p className="mt-6 text-sm text-slate-500">Belum ada pengguna terdaftar.</p>
+        !error && (
+          <p className="rounded-2xl border border-garis-tipis bg-kertas px-4 py-8 text-center text-[13.5px] text-tinta-2">
+            Belum ada pengguna terdaftar.
+          </p>
+        )
       )}
 
-      <p className="mt-4 text-[11.5px] leading-relaxed text-slate-400">
+      <p className="rounded-xl bg-krem-2/70 px-3.5 py-3 text-[11.5px] leading-relaxed text-tinta-3">
         Tendang memblokir login dan memutus sesi yang sedang berjalan; akun tetap ada dan bisa
         dipulihkan. Hapus permanen membuang akun beserta profil, keanggotaan grup, favorit, dan
         catatan bacaan — tidak bisa dikembalikan. Akun yang masih pemilik grup beranggota lain atau
         pernah menulis saat teduh ditolak oleh sistem.
+        {superadmin ? "" : " Hapus permanen hanya tersedia untuk super admin."}
       </p>
     </div>
   );

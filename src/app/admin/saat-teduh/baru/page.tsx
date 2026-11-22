@@ -1,7 +1,7 @@
 import DevotionForm from "@/components/DevotionForm";
 import { createClient } from "@/lib/supabase/server";
 import { todayJakarta } from "@/lib/dates";
-
+import Kepala from "@/components/admin/Kepala";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +15,13 @@ export default async function NewDevotionPage() {
     .maybeSingle();
 
   return (
-    <div>
-      <h1 className="text-xl font-bold text-slate-900">Tulis Saat Teduh Baru</h1>
-      <div className="mt-4">
-        <DevotionForm bulanIni={bulan} temaAwal={tema?.tema ?? ""} />
-      </div>
+    <div className="space-y-5">
+      <Kepala
+        label="Naskah baru"
+        judul="Tulis Saat Teduh"
+        keterangan="Simpan sebagai draft bila masih dikerjakan, terbitkan bila sudah siap, atau jadwalkan untuk tanggal mendatang."
+      />
+      <DevotionForm bulanIni={bulan} temaAwal={tema?.tema ?? ""} />
     </div>
   );
 }

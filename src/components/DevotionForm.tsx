@@ -234,145 +234,189 @@ export default function DevotionForm({
     router.refresh();
   }
 
-  const inputCls = "mt-1 w-full rounded border border-slate-300 px-3 py-2.5 text-sm";
-  const bantu = "mt-1 text-xs text-slate-500";
+  const inputCls =
+    "mt-1.5 w-full rounded-xl border border-garis bg-kertas px-3 py-2.5 text-[14px] text-tinta outline-none transition placeholder:text-tinta-3/70 focus:border-ungu/50 focus:ring-2 focus:ring-ungu/15";
+  const bantu = "mt-1.5 text-[11.5px] leading-relaxed text-tinta-3";
+  const labelCls = "text-[12.5px] font-semibold text-tinta-2";
 
   return (
     <form onSubmit={(e: FormEvent) => e.preventDefault()} className="space-y-4">
-      <div>
-        <label className="text-sm font-medium">Judul *</label>
-        <input
-          className={inputCls}
-          value={form.title}
-          onChange={(e) => set("title", e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="text-sm font-medium">Tanggal saat teduh *</label>
-          <input
-            type="date"
-            className={inputCls}
-            value={form.devotion_date}
-            onChange={(e) => set("devotion_date", e.target.value)}
-            required
-          />
-          <p className={bantu}>
-            Otomatis terisi tanggal hari ini. Satu tanggal satu saat teduh.
-          </p>
+      {/* ===== Detail edisi ===== */}
+      <section className="rounded-2xl border border-garis-tipis bg-kertas p-4 shadow-[var(--shadow-kartu)]">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[14px] font-bold text-plum">Detail edisi</h2>
+          {initial?.status && (
+            <span className="rounded-full bg-krem-2 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.06em] text-tinta-2">
+              {initial.status}
+            </span>
+          )}
         </div>
-        <div>
-          <label className="text-sm font-medium">
-            Tema {labelBulan(bulanTanggal)} — satu tema untuk seluruh bulan
+
+        <div className="mt-3">
+          <label className={labelCls} htmlFor="judul-teduh">
+            Judul <span className="text-ungu">*</span>
           </label>
           <input
-            className={inputCls}
-            value={tema}
-            onChange={(e) => setTema(e.target.value)}
-            onBlur={simpanTemaBulan}
-            placeholder="mis. Kasih Karunia"
-            disabled={memuatTema}
+            id="judul-teduh"
+            className={`${inputCls} text-[16px] font-semibold`}
+            value={form.title}
+            onChange={(e) => set("title", e.target.value)}
+            placeholder="Judul saat teduh"
+            required
           />
-          <p className={bantu}>
-            {memuatTema
-              ? "Memuat tema bulan…"
-              : temaTersimpan
-                ? `Tema bulan ini: “${temaTersimpan}”. Mengubahnya mengubah seluruh bulan.`
-                : "Belum ada tema untuk bulan ini. Cukup diisi sekali."}
-          </p>
         </div>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="text-sm font-medium">Penulis (opsional)</label>
-          <input
-            className={inputCls}
-            value={form.author}
-            onChange={(e) => set("author", e.target.value)}
-            placeholder="Nama penulis"
-          />
-          <p className={bantu}>
-            Opsional. Nama penulis hanya terlihat oleh admin dan editor, tidak tampil di
-            halaman publik.
-          </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className={labelCls} htmlFor="tanggal-teduh">
+              Tanggal <span className="text-ungu">*</span>
+            </label>
+            <input
+              id="tanggal-teduh"
+              type="date"
+              className={inputCls}
+              value={form.devotion_date}
+              onChange={(e) => set("devotion_date", e.target.value)}
+              required
+            />
+            <p className={bantu}>Terisi tanggal hari ini. Satu tanggal satu saat teduh.</p>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="tema-teduh">
+              Tema {labelBulan(bulanTanggal)}
+            </label>
+            <input
+              id="tema-teduh"
+              className={inputCls}
+              value={tema}
+              onChange={(e) => setTema(e.target.value)}
+              onBlur={simpanTemaBulan}
+              placeholder="mis. Kasih Karunia"
+              disabled={memuatTema}
+            />
+            <p className={bantu}>
+              {memuatTema
+                ? "Memuat tema bulan…"
+                : temaTersimpan
+                  ? `Tema bulan ini: “${temaTersimpan}”. Satu tema untuk seluruh bulan.`
+                  : "Belum ada tema bulan ini. Cukup diisi sekali."}
+            </p>
+          </div>
         </div>
-        <div>
-          <label className="text-sm font-medium">Ringkasan (opsional)</label>
-          <textarea
-            className={inputCls}
-            rows={2}
-            value={form.summary}
-            onChange={(e) => {
-              set("summary", e.target.value);
-              setRingkasanManual(e.target.value.trim().length > 0);
-            }}
-            placeholder={ringkasanOtomatisTeks || "Kosongkan untuk diambil otomatis dari isi"}
-          />
-          <p className={bantu}>
-            Opsional. Tampil di beranda dan arsip. Bila dikosongkan, diambil otomatis dari
-            beberapa kalimat awal isi.
-            {!ringkasanManual && ringkasanOtomatisTeks ? (
-              <>
-                {" "}
-                Pratinjau otomatis: <em>{ringkasanOtomatisTeks}</em>
-              </>
-            ) : null}
-          </p>
-        </div>
-      </div>
 
-      <div>
-        <label className="text-sm font-medium">Isi saat teduh</label>
-        <div className="mt-1">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className={labelCls} htmlFor="penulis-teduh">
+              Penulis <span className="font-normal text-tinta-3">(opsional)</span>
+            </label>
+            <input
+              id="penulis-teduh"
+              className={inputCls}
+              value={form.author}
+              onChange={(e) => set("author", e.target.value)}
+              placeholder="Nama penulis"
+            />
+            <p className={bantu}>Hanya terlihat admin &amp; editor, tidak tampil di halaman publik.</p>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="ringkasan-teduh">
+              Ringkasan <span className="font-normal text-tinta-3">(opsional)</span>
+            </label>
+            <textarea
+              id="ringkasan-teduh"
+              className={inputCls}
+              rows={2}
+              value={form.summary}
+              onChange={(e) => {
+                set("summary", e.target.value);
+                setRingkasanManual(e.target.value.trim().length > 0);
+              }}
+              placeholder={ringkasanOtomatisTeks || "Kosongkan untuk diambil otomatis dari isi"}
+            />
+            <p className={bantu}>
+              Tampil di beranda dan arsip. Bila dikosongkan, diambil otomatis dari beberapa kalimat
+              awal isi.
+              {!ringkasanManual && ringkasanOtomatisTeks ? (
+                <>
+                  {" "}
+                  Pratinjau: <em>{ringkasanOtomatisTeks}</em>
+                </>
+              ) : null}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Isi ===== */}
+      <section className="rounded-2xl border border-garis-tipis bg-kertas p-4 shadow-[var(--shadow-kartu)]">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-[14px] font-bold text-plum">Isi saat teduh</h2>
+          <p className="text-[11px] tabular-nums text-tinta-3">
+            {teksPolos(form.body).length.toLocaleString("id-ID")} karakter
+          </p>
+        </div>
+        <div className="mt-2.5">
           <BodyEditor value={form.body} onChange={(html) => set("body", html)} />
         </div>
         <p className={bantu}>
-          {teksPolos(form.body).length} karakter · semua rujukan ayat di dalam isi menjadi
-          tautan yang membuka ayat Alkitab.
+          Semua rujukan ayat di dalam isi otomatis menjadi tautan yang membuka ayat Alkitab.
         </p>
-      </div>
+      </section>
 
-      {error && <p className="rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {info && <p className="rounded bg-emerald-50 p-3 text-sm text-emerald-800">{info}</p>}
+      {error && (
+        <p className="rounded-xl border border-merah/30 bg-merah/5 px-4 py-3 text-[13px] font-medium text-merah">
+          {error}
+        </p>
+      )}
+      {info && (
+        <p className="rounded-xl border border-baca-ya bg-baca-ya/40 px-4 py-3 text-[13px] font-medium text-[#1f6b48]">
+          {info}
+        </p>
+      )}
 
-      <div className="flex flex-wrap gap-3 border-t border-slate-200 pt-4">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => save("draft")}
-          className="rounded-full border border-slate-400 px-5 py-2.5 text-sm disabled:opacity-60"
-        >
-          Simpan Draft
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => save("published")}
-          className="rounded-full bg-[#9B3F76] px-5 py-2.5 text-sm text-white disabled:opacity-60"
-        >
-          Terbitkan Sekarang
-        </button>
-        <div className="flex items-center gap-2">
-          <input
-            type="datetime-local"
-            className="rounded border border-slate-300 px-2 py-2 text-sm"
-            value={scheduleAt}
-            onChange={(e) => setScheduleAt(e.target.value)}
-            aria-label="Waktu tayang"
-          />
+      {/* ===== Aksi ===== */}
+      <section className="rounded-2xl border border-garis-tipis bg-krem-2/60 p-3.5">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             disabled={busy}
-            onClick={() => save("scheduled", scheduleAt)}
-            className="rounded-full border border-[#9B3F76] px-4 py-2 text-sm text-[#9B3F76] disabled:opacity-60"
+            onClick={() => save("published")}
+            className="btn btn-utama btn-sm"
           >
-            Jadwalkan
+            {busy ? "Menyimpan…" : "Terbitkan sekarang"}
           </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => save("draft")}
+            className="btn btn-sekunder btn-sm"
+          >
+            Simpan draft
+          </button>
+          <span aria-hidden className="mx-1 hidden h-6 w-px bg-garis sm:block" />
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="datetime-local"
+              className="rounded-xl border border-garis bg-kertas px-2.5 py-2 text-[13px] text-tinta outline-none focus:border-ungu/50"
+              value={scheduleAt}
+              onChange={(e) => setScheduleAt(e.target.value)}
+              aria-label="Waktu tayang"
+            />
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => save("scheduled", scheduleAt)}
+              className="btn btn-halus btn-sm"
+            >
+              Jadwalkan
+            </button>
+          </div>
         </div>
-      </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-tinta-3">
+          Terbit = langsung tampil. Draft = hanya terlihat staf. Jadwalkan = tayang otomatis pada
+          waktu yang dipilih.
+        </p>
+      </section>
     </form>
   );
 }

@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DevotionForm from "@/components/DevotionForm";
-
+import Kepala, { LencanaStatus } from "@/components/admin/Kepala";
+import { IkonHati } from "@/components/Ikon";
+import { IkonCentang, IkonLuar } from "@/components/admin/IkonAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -42,29 +45,64 @@ export default async function EditDevotionPage({
   ]);
 
   return (
-    <div>
-      <h1 className="text-xl font-bold text-slate-900">Edit Saat Teduh</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Status saat ini: <strong>{d.status}</strong> · ♥ {d.hearts_count} · ✓{" "}
-        {selesai.count ?? 0} selesai dibaca
-      </p>
-      <div className="mt-4">
-        <DevotionForm
-          bulanIni={d.devotion_date.slice(0, 7)}
-          temaAwal={temaBulan.data?.tema ?? d.theme ?? ""}
-          initial={{
-            id: d.id,
-            slug: d.slug,
-            devotion_date: d.devotion_date,
-            title: d.title,
-            summary: d.summary,
-            body: d.body,
-            theme: d.theme ?? "",
-            author: penulis.data?.nama ?? "",
-            status: d.status,
-          }}
-        />
+    <div className="space-y-5">
+      <div>
+        <Link
+          href="/admin/saat-teduh"
+          className="inline-flex items-center gap-1.5 rounded px-1 py-1 text-[12.5px] font-semibold text-tinta-2 transition hover:text-plum"
+        >
+          <span aria-hidden>←</span> Semua saat teduh
+        </Link>
+        <div className="mt-2">
+          <Kepala
+            label="Sunting"
+            judul={d.title}
+            aksi={
+              <>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-krem-2 px-3 py-1.5 text-[12px] font-semibold text-tinta-2">
+                  <IkonHati className="h-[13px] w-[13px]" />
+                  {d.hearts_count ?? 0}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-baca-ya px-3 py-1.5 text-[12px] font-semibold text-[#1f6b48]">
+                  <IkonCentang className="h-[13px] w-[13px]" />
+                  {selesai.count ?? 0} selesai
+                </span>
+                <Link href={`/saat-teduh/${d.slug}`} target="_blank" className="btn btn-halus btn-sm">
+                  <IkonLuar className="h-4 w-4" />
+                  Lihat
+                </Link>
+              </>
+            }
+          />
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <LencanaStatus status={d.status} />
+          {d.theme && (
+            <span className="rounded-full bg-lavender px-2.5 py-0.5 text-[11px] font-semibold text-ungu">
+              {d.theme}
+            </span>
+          )}
+          {penulis.data?.nama && (
+            <span className="text-[11.5px] text-tinta-3">oleh {penulis.data.nama}</span>
+          )}
+        </div>
       </div>
+
+      <DevotionForm
+        bulanIni={d.devotion_date.slice(0, 7)}
+        temaAwal={temaBulan.data?.tema ?? d.theme ?? ""}
+        initial={{
+          id: d.id,
+          slug: d.slug,
+          devotion_date: d.devotion_date,
+          title: d.title,
+          summary: d.summary,
+          body: d.body,
+          theme: d.theme ?? "",
+          author: penulis.data?.nama ?? "",
+          status: d.status,
+        }}
+      />
     </div>
   );
 }

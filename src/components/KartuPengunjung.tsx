@@ -3,6 +3,7 @@
 // pernah tahu apa pun tentang pengguna.
 import { formatTanggalID } from "@/lib/dates";
 import type { RingkasanPengunjung } from "@/lib/pengunjung";
+import { IkonOrang } from "@/components/admin/IkonAdmin";
 
 function angka(n: number): string {
   return new Intl.NumberFormat("id-ID").format(n);
@@ -15,7 +16,7 @@ function batang(harian: { hari: string; jumlah: number }[]) {
     .reverse()
     .map((h) => ({
       ...h,
-      tinggi: Math.max(2, Math.round((h.jumlah / puncak) * 56)),
+      tinggi: Math.max(3, Math.round((h.jumlah / puncak) * 64)),
       label: new Intl.DateTimeFormat("id-ID", {
         timeZone: "Asia/Jakarta",
         day: "numeric",
@@ -26,16 +27,31 @@ function batang(harian: { hari: string; jumlah: number }[]) {
 
 export default function KartuPengunjung({ data }: { data: RingkasanPengunjung }) {
   const kolom = batang(data.harian);
+  const puncak = Math.max(1, ...kolom.map((k) => k.jumlah));
+
   return (
-    <div className="mt-6 rounded-lg border border-slate-200 p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-semibold text-slate-700">Pengunjung website</h2>
-        <span className="text-xs text-slate-500">
-          khusus super admin · hari ini {formatTanggalID(data.harian[0]?.hari ?? "")}
+    <section
+      data-kartu-pengunjung
+      className="rounded-2xl border border-garis-tipis bg-kertas p-4 shadow-[var(--shadow-kartu)]"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-lavender text-ungu">
+            <IkonOrang className="h-[15px] w-[15px]" />
+          </span>
+          <div>
+            <h2 className="text-[14px] font-bold text-plum">Pengunjung website</h2>
+            <p className="text-[11.5px] text-tinta-3">
+              khusus super admin · hari ini {formatTanggalID(data.harian[0]?.hari ?? "")}
+            </p>
+          </div>
+        </div>
+        <span className="rounded-full bg-krem-2 px-2.5 py-1 text-[11px] font-semibold text-tinta-2">
+          {angka(data.hariTercatat)} hari tercatat · {angka(data.total)} total
         </span>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         {[
           { label: "Hari ini", nilai: data.hariIni, utama: true },
           { label: "Kemarin", nilai: data.kemarin },
@@ -44,14 +60,16 @@ export default function KartuPengunjung({ data }: { data: RingkasanPengunjung })
         ].map((k) => (
           <div
             key={k.label}
-            className={`rounded-lg border p-3 ${
-              k.utama ? "border-[#9B3F76]/30 bg-[#9B3F76]/5" : "border-slate-200"
+            className={`rounded-xl border px-3 py-2.5 ${
+              k.utama ? "border-[#963296]/25 bg-lavender" : "border-garis-tipis bg-krem-2/60"
             }`}
           >
-            <p className="text-xs text-slate-500">{k.label}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.07em] text-tinta-2">
+              {k.label}
+            </p>
             <p
-              className={`mt-0.5 text-2xl font-bold tabular-nums ${
-                k.utama ? "text-[#9B3F76]" : "text-slate-800"
+              className={`mt-0.5 text-[22px] font-bold leading-none tabular-nums ${
+                k.utama ? "text-plum" : "text-tinta"
               }`}
             >
               {angka(k.nilai)}
@@ -60,37 +78,43 @@ export default function KartuPengunjung({ data }: { data: RingkasanPengunjung })
         ))}
       </div>
 
-      <p className="mt-3 text-sm text-slate-600">
-        Total tercatat sejak pencatat dipasang:{" "}
-        <span className="font-semibold text-slate-800">{angka(data.total)}</span> pengunjung ·{" "}
-        {data.hariTercatat} hari ada kunjungan
-      </p>
-
       <div className="mt-4">
-        <p className="text-xs text-slate-500">14 hari terakhir (pengunjung unik per hari)</p>
-        <div className="mt-2 flex h-16 items-end gap-1.5">
-          {kolom.map((k) => (
-            <div key={k.hari} className="group flex h-16 flex-1 flex-col justify-end">
-              <div
-                className="w-full rounded-t bg-[#9B3F76]/70 transition group-hover:bg-[#9B3F76]"
-                style={{ height: `${k.tinggi}px` }}
-                title={`${k.label}: ${angka(k.jumlah)} pengunjung`}
-              />
-            </div>
-          ))}
+        <div className="flex items-baseline justify-between">
+          <p className="text-[11.5px] font-semibold uppercase tracking-[0.07em] text-tinta-3">
+            14 hari terakhir
+          </p>
+          <p className="text-[11px] text-tinta-3">puncak {angka(puncak)}/hari</p>
         </div>
-        <div className="mt-1 flex justify-between text-[11px] text-slate-400">
+        <div className="mt-2 flex h-[72px] items-end gap-1.5">
+          {kolom.map((k, i) => {
+            const hariIni = i === kolom.length - 1;
+            return (
+              <div key={k.hari} className="group flex h-[72px] flex-1 flex-col justify-end">
+                <div
+                  className={`w-full rounded-t-md transition ${
+                    hariIni
+                      ? "bg-[linear-gradient(180deg,#963296,#7a2679)]"
+                      : "bg-[#963296]/40 group-hover:bg-[#963296]/70"
+                  }`}
+                  style={{ height: `${k.tinggi}px` }}
+                  title={`${k.label}: ${angka(k.jumlah)} pengunjung`}
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-1 flex justify-between text-[10.5px] text-tinta-3">
           <span>{kolom[0]?.label}</span>
-          <span>{kolom[kolom.length - 1]?.label}</span>
+          <span>hari ini</span>
         </div>
       </div>
 
       {data.galat && (
-        <p className="mt-3 rounded bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-3 rounded-xl border border-senja/30 bg-senja/10 px-3 py-2 text-[11.5px] leading-relaxed text-jingga">
           Sebagian angka gagal dibaca dari penyimpanan — angka yang tampil bisa lebih kecil dari
           sebenarnya.
         </p>
       )}
-    </div>
+    </section>
   );
 }
