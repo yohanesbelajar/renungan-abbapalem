@@ -81,7 +81,7 @@
     --color-baca-ya: #12301f;
     --color-baca-tidak: #2a2533;
     --color-bintang-nyala: #f7c274;
-    --color-bintang-padam: #6f687c;
+    --color-bintang-padam: #8f8799;
   }
 }
 :root[data-tema="gelap"] {
@@ -106,7 +106,7 @@
   --color-baca-ya: #12301f;
   --color-baca-tidak: #2a2533;
   --color-bintang-nyala: #f7c274;
-  --color-bintang-padam: #6f687c;
+  --color-bintang-padam: #8f8799;
 }
 /* Latar gradasi & kartu yang ditulis langsung (bukan lewat token) */
 @media (prefers-color-scheme: dark) {

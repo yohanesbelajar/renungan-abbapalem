@@ -27,25 +27,26 @@ export default function TautanUndang({ kode }: { kode: string }) {
   return (
     <div
       data-tautan-undangan
-      className="rounded-2xl border border-garis-tipis bg-lavender px-4 py-3"
+      className="rounded-2xl border border-garis-tipis bg-lavender/70 px-4 py-3"
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-tinta-3">
-        Tautan undangan (khusus admin)
+      <p className="flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-tinta-3">
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ungu" />
+        Tautan undangan · khusus admin
       </p>
-      <p className="mt-1 break-all font-mono text-sm font-semibold text-plum">
+      <p className="mt-1.5 break-all font-mono text-[12.5px] font-semibold text-plum">
         {tautan || `/grup/gabung/${kode}`}
       </p>
-      <div className="mt-2 flex gap-3">
+      <div className="mt-2.5 flex gap-4">
         <a
           href={`/grup/gabung/${kode}`}
-          className="text-xs font-medium text-ungu hover:underline"
+          className="text-[12.5px] font-semibold text-ungu hover:underline"
         >
           Buka tautan
         </a>
         <button
           type="button"
           onClick={salin}
-          className="text-xs font-medium text-ungu hover:underline"
+          className="text-[12.5px] font-semibold text-ungu hover:underline"
         >
           {tersalin ? "Tersalin ✓" : "Salin tautan"}
         </button>

@@ -52,8 +52,16 @@ export default function AksiGrup() {
         onSubmit={buatGrup}
         className="rounded-2xl border border-garis-tipis bg-kertas p-4"
       >
-        <h2 className="font-semibold text-plum">Buat grup baru</h2>
-        <label htmlFor="nama-grup" className="mt-3 block text-sm text-tinta-2">
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold text-plum">
+          <span
+            aria-hidden
+            className="grid h-7 w-7 place-items-center rounded-full bg-lavender text-[15px] font-semibold text-ungu-2"
+          >
+            +
+          </span>
+          Buat grup baru
+        </h2>
+        <label htmlFor="nama-grup" className="mt-3 block text-[13px] text-tinta-2">
           Nama grup
         </label>
         <input
@@ -64,7 +72,7 @@ export default function AksiGrup() {
           value={nama}
           onChange={(e) => setNama(e.target.value)}
           placeholder="mis. Kelompok Selasa Palem"
-          className="mt-1 w-full rounded border border-garis bg-cream px-3 py-2.5 text-sm"
+          className="mt-1 w-full rounded-xl border border-garis bg-cream px-3 py-2.5 text-sm"
         />
         <button
           type="submit"
