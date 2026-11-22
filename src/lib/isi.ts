@@ -213,6 +213,57 @@ export function ringkasanOtomatis(isi: string, maksKalimat = 2, maksHuruf = 320)
   return keluar;
 }
 
+/** Entitas HTML yang sering muncul di isi lama — dibersihkan sebelum tampil di React
+ *  (React akan mencetak "&ldquo;" apa adanya bila hanya dijadikan teks). */
+function entitasKeTeks(s: string): string {
+  const NAMA: Record<string, string> = {
+    nbsp: " ", amp: "&", lt: "<", gt: ">", quot: '"', apos: "'",
+    ldquo: "\u201c", rdquo: "\u201d", lsquo: "\u2018", rsquo: "\u2019",
+    mdash: "\u2014", ndash: "\u2013", hellip: "\u2026", bull: "\u2022",
+  };
+  return s
+    .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&([a-z]+);/gi, (m, n) => NAMA[n.toLowerCase()] ?? m);
+}
+
+/** Beberapa kalimat pertama isi yang benar-benar prosa — dipakai pembuka beranda.
+ *  Melewati rujukan ayat, instruksi "Bacalah beberapa kali", daftar pertanyaan,
+ *  dan judul bagian (Pengajaran:/Penerapan:), karena itu bukan isi renungan. */
+export function pembukaIsi(isi: string, maksKalimat = 3, maksHuruf = 460): string {
+  const paragraf = pecahIsi(isi)
+    .filter((b) => b.jenis === "paragraf")
+    .map((b) =>
+      entitasKeTeks(
+        b.html
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " "),
+      ).replace(/\s+/g, " ").trim(),
+    )
+    .filter(
+      (t) =>
+        t.length > 0 &&
+        !t.includes("Bacalah beberapa kali") &&
+        !/\(TB\)/.test(t) &&
+        !/^\(TB\)/.test(t) &&
+        !/^(Pengantar|Pengajaran|Penerapan|Renungan|Pertanyaan)\b/i.test(t),
+    );
+
+  const kalimat = paragraf
+    .join(" ")
+    .match(/[^.!?]+[.!?]+["”']?|[^.!?]+$/g) ?? [];
+  let keluar = "";
+  for (const k of kalimat.slice(0, maksKalimat)) {
+    if ((keluar + k).trim().length > maksHuruf) break;
+    keluar += k;
+  }
+  keluar = (keluar || kalimat[0] || "").trim();
+  if (keluar.length > maksHuruf) {
+    keluar = keluar.slice(0, maksHuruf).replace(/\s+\S*$/, "") + "…";
+  }
+  return keluar;
+}
+
 /** Teks polos dari HTML (untuk hitung kata / pratinjau). */
 export function teksPolos(isi: string): string {
   const html = isiHtml(isi) ? isi : teksKeHtml(isi);

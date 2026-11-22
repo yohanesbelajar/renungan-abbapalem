@@ -5,7 +5,8 @@ import { unstable_cache } from "next/cache";
 import { anonClient } from "./supabase/anon";
 import type { DevotionCard } from "./types";
 
-const KOLOM = "slug, devotion_date, title, theme, hearts_count";
+// body ikut diambil: beranda menampilkan beberapa kalimat pembuka edisi terbaru.
+const KOLOM = "slug, devotion_date, title, theme, hearts_count, body";
 
 export type DataBeranda = {
   hariIni: DevotionCard | null;

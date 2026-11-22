@@ -6,6 +6,7 @@ import { SITE_NAME, VALUE_STATEMENT } from "@/lib/constants";
 import { dataBeranda } from "@/lib/beranda";
 import { semuaTerbit } from "@/lib/publik";
 import { kelompokTema } from "@/lib/topik";
+import { pembukaIsi } from "@/lib/isi";
 
 // Beranda kini memakai data ter-cache (lib/beranda.ts). Dulu force-dynamic:
 // tiap kunjungan menembak Supabase tiga kali, TTFB 1,24 s.
@@ -28,6 +29,8 @@ export default async function HomePage() {
   // Label bulan mengikuti edisi terbaru yang benar-benar terbit, bukan tanggal hari ini
   const acuan = featured?.devotion_date ?? archive?.[0]?.devotion_date ?? today;
   const bulanIni = `${BULAN_PANJANG[Number(acuan.slice(5, 7))]} ${acuan.slice(0, 4)}`;
+  // Beberapa kalimat pertama isi edisi unggulan — pengganti paragraf pengantar tetap.
+  const pembuka = featured?.body ? pembukaIsi(featured.body, 3, 420) : "";
 
   return (
     <div>
@@ -55,25 +58,61 @@ export default async function HomePage() {
               {SITE_NAME}
             </p>
 
-            {/* Judul: ungu plum, bukan tinta hitam — warna yang memimpin halaman */}
-            <h1 className="judul-rapat mt-6 text-[36px] text-plum sm:text-[52px] lg:text-[62px]">
-              Berjalan bersama Tuhan,
-              <br className="hidden sm:block" />{" "}
-              <span className="relative inline-block">
-                <span className="bg-[linear-gradient(100deg,#963296_0%,#7a2679_58%,#6b2a55_100%)] bg-clip-text text-transparent">
-                  setiap hari.
-                </span>
+            {/* Judul: ungu plum, bukan tinta hitam — warna yang memimpin halaman.
+                Mengikuti edisi terbaru supaya beranda selalu memperlihatkan
+                saat teduh yang sedang berlaku, bukan tagline tetap. */}
+            {featured ? (
+              <>
+                <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[14px] text-tinta-2">
+                  <span className="label-kecil rounded-full bg-senja/15 px-2 py-1 text-[#7a4a10]">
+                    {hariIni ? "Hari ini" : "Terbaru"}
+                  </span>
+                  <span>{formatTanggalID(featured.devotion_date)}</span>
+                  {featured.theme && (
+                    <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
+                      <span aria-hidden className="hidden text-tinta-3 sm:inline">·</span>
+                      <span className="font-semibold text-ungu">{featured.theme}</span>
+                    </span>
+                  )}
+                </p>
+
+                <h1 className="judul-rapat mx-auto mt-4 max-w-3xl text-balance text-[30px] leading-[1.14] text-plum sm:text-[40px] lg:text-[46px]">
+                  {/* "&" tidak boleh terpisah dari kata sesudahnya di ujung baris */}
+                  {featured.title.replace(/&\s+/g, "&\u00a0")}
+                </h1>
                 <span
                   aria-hidden
-                  className="absolute inset-x-0 -bottom-2 h-[5px] rounded-full bg-[linear-gradient(90deg,rgba(247,194,116,0)_0%,rgba(224,138,0,0.45)_50%,rgba(247,194,116,0)_100%)]"
+                  className="mx-auto mt-4 block h-[5px] w-[96px] rounded-full bg-[linear-gradient(90deg,rgba(247,194,116,0)_0%,rgba(224,138,0,0.55)_50%,rgba(247,194,116,0)_100%)]"
                 />
-              </span>
-            </h1>
 
-            <p className="mx-auto mt-6 max-w-xl text-[16px] leading-relaxed text-tinta-2 sm:text-[17.5px]">
-              Satu saat teduh setiap hari untuk jemaat Abbalove Palem dan pembaca
-              di semua tempat. Cari menurut topik atau ayat, kapan saja.
-            </p>
+                {pembuka && (
+                  <p className="mx-auto mt-7 max-w-2xl text-[16px] leading-relaxed text-tinta-2 sm:text-[17.5px]">
+                    {pembuka}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <h1 className="judul-rapat mt-6 text-[36px] text-plum sm:text-[52px] lg:text-[62px]">
+                  Berjalan bersama Tuhan,
+                  <br className="hidden sm:block" />{" "}
+                  <span className="relative inline-block">
+                    <span className="bg-[linear-gradient(100deg,#963296_0%,#7a2679_58%,#6b2a55_100%)] bg-clip-text text-transparent">
+                      setiap hari.
+                    </span>
+                    <span
+                      aria-hidden
+                      className="absolute inset-x-0 -bottom-2 h-[5px] rounded-full bg-[linear-gradient(90deg,rgba(247,194,116,0)_0%,rgba(224,138,0,0.45)_50%,rgba(247,194,116,0)_100%)]"
+                    />
+                  </span>
+                </h1>
+
+                <p className="mx-auto mt-6 max-w-xl text-[16px] leading-relaxed text-tinta-2 sm:text-[17.5px]">
+                  Satu saat teduh setiap hari untuk jemaat Abbalove Palem dan pembaca
+                  di semua tempat. Cari menurut topik atau ayat, kapan saja.
+                </p>
+              </>
+            )}
 
             <div className="mx-auto mt-9 flex max-w-md flex-col gap-4 sm:max-w-none sm:flex-row sm:items-center sm:justify-center">
               {featured && (
@@ -81,7 +120,7 @@ export default async function HomePage() {
                   href={`/saat-teduh/${featured.slug}`}
                   className="btn btn-utama w-full sm:w-auto"
                 >
-                  <span>Baca saat teduh hari ini</span>
+                  <span>Baca selengkapnya</span>
                   <IkonPanah className="h-4 w-4" />
                 </Link>
               )}
@@ -95,28 +134,6 @@ export default async function HomePage() {
                 Telusuri arsip
               </Link>
             </div>
-
-            {/* Satu baris edisi hari ini — bukan kartu, bukan pengulangan arsip */}
-            {featured && (
-              <Link
-                href={`/saat-teduh/${featured.slug}`}
-                className="group mx-auto mt-8 inline-flex max-w-2xl flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 text-[14px] text-tinta-2 transition hover:text-plum"
-              >
-                <span className="label-kecil rounded-full bg-senja/15 px-2 py-1 text-[#7a4a10]">
-                  {hariIni ? "Hari ini" : "Terbaru"}
-                </span>
-                <span>{formatTanggalID(featured.devotion_date)}</span>
-                {featured.theme && (
-                  <>
-                    <span aria-hidden className="text-tinta-3">·</span>
-                    <span className="font-semibold text-ungu">{featured.theme}</span>
-                  </>
-                )}
-                <span className="font-semibold text-plum underline decoration-garis underline-offset-4 group-hover:decoration-ungu/50">
-                  {featured.title}
-                </span>
-              </Link>
-            )}
 
             <p className="mt-5 text-[13px] font-medium tracking-[0.04em] text-ungu-2">
               {VALUE_STATEMENT}

@@ -23,6 +23,8 @@ export interface DevotionCard {
   // tidak diambil lagi di daftar arsip/beranda/topik — 52 KB per 1.000 baris —
   // jadi opsional di sini. Halaman edisi tetap mengambilnya untuk meta deskripsi.
   summary?: string;
+  /** Diambil beranda saja (beberapa kalimat pembuka di hero). */
+  body?: string;
   theme: string | null;
   hearts_count: number;
 }
