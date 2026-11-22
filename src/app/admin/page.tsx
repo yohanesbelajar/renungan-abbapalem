@@ -7,7 +7,6 @@ import Kepala, { KotakAngka, LencanaStatus } from "@/components/admin/Kepala";
 import {
   IkonCentang,
   IkonJam,
-  IkonPlus,
   IkonTulis,
 } from "@/components/admin/IkonAdmin";
 import { IkonBuku, IkonHati } from "@/components/Ikon";
@@ -82,12 +81,6 @@ export default async function AdminDashboard() {
         label="Ringkasan"
         judul="Dasbor"
         keterangan={`Keadaan situs hari ini, ${formatTanggalID(today)}.`}
-        aksi={
-          <Link href="/admin/saat-teduh/baru" className="btn btn-utama btn-sm">
-            <IkonPlus className="h-4 w-4" />
-            Tulis baru
-          </Link>
-        }
       />
 
       {/* ===== Edisi hari ini ===== */}
@@ -105,37 +98,25 @@ export default async function AdminDashboard() {
             </div>
 
             {hariIni ? (
-              <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="judul-rapat-sm text-[22px] text-plum sm:text-[25px]">
-                    {hariIni.title}
-                  </h2>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <LencanaStatus status={hariIni.status} />
-                    {hariIni.theme && (
-                      <span className="rounded-full bg-lavender px-2.5 py-0.5 text-[11px] font-semibold text-ungu">
-                        {hariIni.theme}
-                      </span>
-                    )}
-                  </div>
+              <div className="mt-2">
+                <h2 className="judul-rapat-sm text-[22px] text-plum sm:text-[25px]">
+                  {hariIni.title}
+                </h2>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <LencanaStatus status={hariIni.status} />
+                  {hariIni.theme && (
+                    <span className="rounded-full bg-lavender px-2.5 py-0.5 text-[11px] font-semibold text-ungu">
+                      {hariIni.theme}
+                    </span>
+                  )}
                 </div>
-                <Link href={`/admin/saat-teduh/${hariIni.slug}`} className="btn btn-sekunder btn-sm">
-                  <IkonTulis className="h-4 w-4" />
-                  Edit edisi
-                </Link>
               </div>
             ) : (
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <h2 className="judul-rapat-sm text-[20px] text-plum">Belum ada edisi hari ini</h2>
-                  <p className="mt-1 max-w-md text-[13.5px] leading-relaxed text-tinta-2">
-                    Pengunjung yang membuka situs hari ini belum menemukan bacaan baru.
-                  </p>
-                </div>
-                <Link href="/admin/saat-teduh/baru" className="btn btn-senja btn-sm">
-                  <IkonPlus className="h-4 w-4" />
-                  Tulis sekarang
-                </Link>
+              <div className="mt-2">
+                <h2 className="judul-rapat-sm text-[20px] text-plum">Belum ada edisi hari ini</h2>
+                <p className="mt-1 max-w-md text-[13.5px] leading-relaxed text-tinta-2">
+                  Pengunjung yang membuka situs hari ini belum menemukan bacaan baru.
+                </p>
               </div>
             )}
           </div>

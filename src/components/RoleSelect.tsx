@@ -57,7 +57,7 @@ export default function RoleSelect({
         value={value}
         disabled={state === "saving"}
         onChange={(e) => change(e.target.value)}
-        className="rounded border border-slate-300 bg-cream px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+        className="min-h-[34px] min-w-[118px] rounded-lg border border-garis bg-cream px-2 py-1.5 text-[13px] font-semibold text-tinta outline-none transition disabled:cursor-not-allowed disabled:opacity-70 focus:border-ungu/50"
         aria-label="Peran pengguna"
       >
         <option value="member">Anggota</option>

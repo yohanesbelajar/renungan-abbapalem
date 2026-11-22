@@ -29,13 +29,6 @@ function tanggal(iso: string | null): string {
   }).format(new Date(iso));
 }
 
-const LABEL_PERAN: Record<string, string> = {
-  superadmin: "Super admin",
-  admin: "Admin",
-  editor: "Editor",
-  member: "Anggota",
-};
-
 function inisial(nama: string): string {
   const b = nama.trim().split(/\s+/).filter(Boolean);
   if (!b.length) return "?";
@@ -135,15 +128,15 @@ export default function KelolaPengguna({
   return (
     <>
       {/* ===== Pencarian & saringan ===== */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[190px] flex-1">
+      <div className="mt-4 space-y-2">
+        <div className="relative">
           <IkonCari className="pointer-events-none absolute left-3 top-1/2 h-[15px] w-[15px] -translate-y-1/2 text-tinta-3" />
           <input
             value={cari}
             onChange={(e) => setCari(e.target.value)}
             placeholder="Cari nama atau email…"
             aria-label="Cari pengguna"
-            className="w-full rounded-xl border border-garis bg-kertas py-2 pl-9 pr-3 text-[13.5px] text-tinta outline-none transition focus:border-ungu/50 focus:ring-2 focus:ring-ungu/15"
+            className="w-full rounded-xl border border-garis bg-kertas py-2.5 pl-9 pr-3 text-[13.5px] text-tinta outline-none transition focus:border-ungu/50 focus:ring-2 focus:ring-ungu/15"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -156,7 +149,7 @@ export default function KelolaPengguna({
                 data-saring-pengguna={s.kunci}
                 data-nyala={nyala ? "ya" : "tidak"}
                 onClick={() => setSaring(s.kunci)}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
+                className={`min-h-[34px] rounded-full px-3.5 text-[12px] font-semibold transition ${
                   nyala ? "bg-plum text-white" : "bg-krem-2 text-tinta-2 hover:bg-krem-3"
                 }`}
               >
@@ -191,59 +184,51 @@ export default function KelolaPengguna({
               key={u.id}
               data-user={u.id}
               data-status={u.status}
-              className={`rounded-2xl border bg-kertas p-3.5 shadow-[var(--shadow-kartu)] transition ${
+              className={`rounded-2xl border bg-kertas p-3.5 shadow-[var(--shadow-kartu)] transition sm:p-4 ${
                 ditendang ? "border-merah/25 bg-merah/[0.02]" : "border-garis-tipis"
               }`}
             >
-              <div className="flex flex-wrap items-start gap-3">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)_auto]">
                 <span
                   aria-hidden
-                  className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[13px] font-bold ${
+                  className={`row-start-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-[13px] font-bold ${
                     ditendang ? "bg-merah/10 text-merah" : "bg-lavender text-ungu"
                   }`}
                 >
                   {inisial(u.nama)}
                 </span>
 
-                <div className="min-w-0 flex-1">
-                  <p className="flex flex-wrap items-center gap-1.5 text-[14px] font-semibold text-tinta">
-                    <span className="truncate">{u.nama}</span>
+                <div className="row-start-1 min-w-0">
+                  <p className="flex min-w-0 flex-wrap items-center gap-1.5 text-[14px] font-semibold text-tinta">
+                    <span className="min-w-0 truncate">{u.nama}</span>
                     {diri && (
-                      <span className="rounded-full bg-lavender px-1.5 py-px text-[10.5px] font-semibold text-ungu">
+                      <span className="shrink-0 rounded-full bg-lavender px-1.5 py-px text-[10.5px] font-semibold text-ungu">
                         Anda
                       </span>
                     )}
                     {ditendang && (
                       <span
                         data-lencana="ditendang"
-                        className="rounded-full bg-merah/10 px-1.5 py-px text-[10.5px] font-bold uppercase tracking-[0.05em] text-merah"
+                        className="shrink-0 rounded-full bg-merah/10 px-1.5 py-px text-[10.5px] font-bold uppercase tracking-[0.05em] text-merah"
                       >
                         ditendang
                       </span>
                     )}
                     {u.peran === "superadmin" && (
-                      <span className="rounded-full bg-plum/10 px-1.5 py-px text-[10.5px] font-bold uppercase tracking-[0.05em] text-plum">
+                      <span className="shrink-0 rounded-full bg-plum/10 px-1.5 py-px text-[10.5px] font-bold uppercase tracking-[0.05em] text-plum">
                         super admin
                       </span>
                     )}
                   </p>
                   <p className="mt-0.5 truncate text-[12px] text-tinta-2">{u.email}</p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-tinta-3">
-                    <span className="font-semibold text-tinta-2">{LABEL_PERAN[u.peran] ?? u.peran}</span>
-                    <span aria-hidden>·</span>
-                    <span>{u.jumlah_grup} grup</span>
-                    <span aria-hidden>·</span>
-                    <span>daftar {tanggal(u.dibuat)}</span>
-                    {ditendang && u.status_at && (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span className="text-merah">ditendang {tanggal(u.status_at)}</span>
-                      </>
-                    )}
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-tinta-3">
+                    {u.jumlah_grup} grup · daftar {tanggal(u.dibuat)}
+                    {ditendang && u.status_at ? ` · ditendang ${tanggal(u.status_at)}` : ""}
                   </p>
                 </div>
 
-                <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                {/* Aksi: satu baris penuh di HP, kolom kanan di desktop */}
+                <div className="col-span-2 row-start-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:justify-end">
                   {kunciPeran ? (
                     <span className="text-[11.5px] text-tinta-3">peran terkunci</span>
                   ) : (
@@ -257,7 +242,7 @@ export default function KelolaPengguna({
                         data-pulihkan={u.id}
                         disabled={sibuk === u.id}
                         onClick={() => pulihkan(u)}
-                        className="rounded-full bg-baca-ya px-3 py-1.5 text-[11.5px] font-bold text-[#1f6b48] transition hover:brightness-95 disabled:opacity-50"
+                        className="min-h-[34px] rounded-full bg-baca-ya px-3.5 text-[11.5px] font-bold text-[#1f6b48] transition hover:brightness-95 disabled:opacity-50"
                       >
                         {sibuk === u.id ? "Memulihkan…" : "Pulihkan"}
                       </button>
@@ -267,7 +252,7 @@ export default function KelolaPengguna({
                         data-tendang={u.id}
                         disabled={sibuk === u.id}
                         onClick={() => tendang(u)}
-                        className="rounded-full px-3 py-1.5 text-[11.5px] font-bold text-merah transition hover:bg-merah/10 disabled:opacity-50"
+                        className="min-h-[34px] rounded-full px-3.5 text-[11.5px] font-bold text-merah transition hover:bg-merah/10 disabled:opacity-50"
                       >
                         {sibuk === u.id ? "Menendang…" : "Tendang"}
                       </button>
@@ -281,7 +266,7 @@ export default function KelolaPengguna({
                         setKonfirmasiHapus(konfirmasiHapus === u.id ? null : u.id);
                         setKetikan("");
                       }}
-                      className="rounded-full px-2.5 py-1.5 text-[11.5px] font-semibold text-tinta-3 transition hover:bg-merah/5 hover:text-merah"
+                      className="min-h-[34px] rounded-full px-3 text-[11.5px] font-semibold text-tinta-3 transition hover:bg-merah/5 hover:text-merah"
                     >
                       Hapus
                     </button>
@@ -301,34 +286,36 @@ export default function KelolaPengguna({
                     Ketik <strong className="font-semibold text-tinta">{u.nama}</strong> untuk
                     mengonfirmasi:
                   </p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <div className="mt-1.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                     <input
                       data-konfirmasi-hapus={u.id}
                       value={ketikan}
                       onChange={(e) => setKetikan(e.target.value)}
-                      className="w-52 rounded-lg border border-merah/30 bg-kertas px-2.5 py-1.5 text-sm text-tinta outline-none focus:border-merah/60"
+                      className="w-full rounded-lg border border-merah/30 bg-kertas px-2.5 py-2 text-sm text-tinta outline-none focus:border-merah/60 sm:w-52"
                       placeholder={u.nama}
                       aria-label="Ketik nama untuk konfirmasi hapus"
                     />
-                    <button
-                      type="button"
-                      data-konfirmasi-tombol={u.id}
-                      disabled={ketikan.trim() !== u.nama || sibuk === u.id}
-                      onClick={() => hapus(u)}
-                      className="rounded-full bg-merah px-3.5 py-1.5 text-[11.5px] font-bold text-white disabled:opacity-40"
-                    >
-                      {sibuk === u.id ? "Menghapus…" : "Hapus permanen"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setKonfirmasiHapus(null);
-                        setKetikan("");
-                      }}
-                      className="text-[11.5px] font-semibold text-tinta-2 hover:underline"
-                    >
-                      Batal
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        data-konfirmasi-tombol={u.id}
+                        disabled={ketikan.trim() !== u.nama || sibuk === u.id}
+                        onClick={() => hapus(u)}
+                        className="min-h-[34px] rounded-full bg-merah px-3.5 text-[11.5px] font-bold text-white disabled:opacity-40"
+                      >
+                        {sibuk === u.id ? "Menghapus…" : "Hapus permanen"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setKonfirmasiHapus(null);
+                          setKetikan("");
+                        }}
+                        className="min-h-[34px] px-1 text-[11.5px] font-semibold text-tinta-2 hover:underline"
+                      >
+                        Batal
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
