@@ -50,6 +50,11 @@ export default async function AdminLayout({
               Pengguna
             </Link>
           )}
+          {profile?.role === "superadmin" && (
+            <Link href="/admin/grup" className="rounded px-2 py-2 hover:bg-slate-100">
+              Grup
+            </Link>
+          )}
           <Link href="/" className="rounded px-2 py-2 hover:bg-slate-100">
             Lihat Website
           </Link>
