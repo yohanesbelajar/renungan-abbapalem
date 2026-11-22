@@ -38,9 +38,14 @@ function LoginInner() {
     });
     setBusy(false);
     if (error) {
-      if (error.message.toLowerCase().includes("not confirmed")) {
+      const pesan = error.message.toLowerCase();
+      if (pesan.includes("not confirmed")) {
         setError(
           "Email Anda belum diverifikasi. Cek kotak masuk untuk tautan verifikasi."
+        );
+      } else if (pesan.includes("banned")) {
+        setError(
+          "Akun ini dinonaktifkan oleh admin situs. Hubungi pengelola bila menurut Anda ini keliru."
         );
       } else {
         setError("Email atau kata sandi salah, atau akun belum terdaftar.");

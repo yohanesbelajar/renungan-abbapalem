@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TautanUndang from "@/components/grup/TautanUndang";
 import UbahPeran from "@/components/grup/UbahPeran";
+import KeluarkanAnggota from "@/components/grup/KeluarkanAnggota";
 import TinggalkanGrup from "@/components/grup/TinggalkanGrup";
 import { HARI_SINGKAT, inisial } from "@/lib/grup-tampilan";
 import type { BarisKomunitas } from "../page";
@@ -266,13 +267,22 @@ export default async function HalamanGrup({
                   </span>
                 </div>
 
-                {sayaPemilik && a.user_id !== user.id && (
-                  <div className="col-span-2 row-start-3 justify-self-end sm:col-span-2 sm:col-start-2 sm:row-start-2">
-                    <UbahPeran
+                {bolehUndang && a.user_id !== user.id && (
+                  <div className="col-span-2 row-start-3 flex items-center justify-end gap-3 justify-self-end sm:col-span-2 sm:col-start-2 sm:row-start-2">
+                    <KeluarkanAnggota
                       grupId={id}
                       userId={a.user_id}
-                      peranSekarang={a.peran}
+                      nama={a.nama}
+                      peran={a.peran}
+                      peranSaya={peranSaya}
                     />
+                    {sayaPemilik && (
+                      <UbahPeran
+                        grupId={id}
+                        userId={a.user_id}
+                        peranSekarang={a.peran}
+                      />
+                    )}
                   </div>
                 )}
               </li>

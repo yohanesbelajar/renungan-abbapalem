@@ -21,10 +21,17 @@ async function ambil(): Promise<Sesi> {
   if (!user) return { masuk: false, staf: false };
   const { data } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, status")
     .eq("id", user.id)
     .maybeSingle();
-  const r = (data as { role?: string } | null)?.role;
+  const r = (data as { role?: string; status?: string } | null)?.role;
+  // Akun yang ditendang admin situs langsung diputus di browser, bukan menunggu
+  // token kedaluwarsa. Pemblokiran sebenarnya tetap di database (banned_until +
+  // semua RPC menolak status tidak aktif).
+  if ((data as { status?: string } | null)?.status === "ditendang") {
+    await supabase.auth.signOut();
+    return { masuk: false, staf: false };
+  }
   return {
     masuk: true,
     staf: r === "admin" || r === "editor" || r === "superadmin",
