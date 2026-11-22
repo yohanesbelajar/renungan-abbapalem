@@ -16,9 +16,9 @@ export default function Header() {
           <img
             src="/logo-rumah-256.png"
             alt="Saat Teduh Palem"
-            width={40}
-            height={40}
-            className="h-10 w-10 rounded-[11px] object-cover shadow-[0_2px_6px_rgba(74,35,82,0.28)] ring-1 ring-black/10"
+            width={44}
+            height={44}
+            className="h-11 w-11 object-contain drop-shadow-[0_1px_2px_rgba(74,35,82,0.25)]"
           />
           <span className="hidden text-[15px] font-semibold tracking-tight text-plum sm:inline">
             Saat Teduh
