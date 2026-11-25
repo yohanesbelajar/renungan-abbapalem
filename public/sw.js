@@ -6,18 +6,31 @@
 // Strategi:
 //  - Navigasi halaman: jaringan dulu, cache cadangan; bila dua-duanya gagal,
 //    tampilkan /offline (halaman HTML yang ikut di-precache).
+//  - Gambar: jaringan dulu, disimpan ke cache gambar; bila jaringan gagal,
+//    pakai simpanan (splash & ikon bilah tetap tampil tanpa sinyal).
 //  - /alkitab/*.json: cache dulu (teks Alkitab tidak berubah).
 //  - Aset /_next/static/*: cache dulu (namanya ber-hash).
 //  - /api/*: tidak disentuh (data harus segar).
 // Versi cache dinaikkan setiap kali build berubah — ganti angka VERSI.
 
-const VERSI = "sate-v3";
+const VERSI = "sate-v4";
 const CACHE_INTI = `${VERSI}-inti`;
 const CACHE_HALAMAN = `${VERSI}-halaman`;
 const CACHE_ASET = `${VERSI}-aset`;
+const CACHE_GAMBAR = `${VERSI}-gambar`;
 const MAKS_HALAMAN = 40;
+const MAKS_GAMBAR = 60;
 
-const INTI = ["/", "/offline", "/manifest.webmanifest", "/logo-palem.png", "/icon-192.png"];
+// Dipreca saat pemasangan: beranda + dua gambar yang selalu tampil (splash & bilah atas),
+// supaya tampil walau jaringan putus.
+const INTI = [
+  "/",
+  "/offline",
+  "/manifest.webmanifest",
+  "/logo-palem.png",
+  "/logo-rumah-256.png",
+  "/icon-192.png",
+];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -72,6 +85,31 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
+  // Gambar: jaringan dulu (selalu yang terbaru), disimpan untuk mode luring.
+  // Bila jaringan gagal, pakai simpanan — splash & ikon bilah tetap tampil.
+  if (req.destination === "image") {
+    e.respondWith(
+      (async () => {
+        try {
+          const res = await fetch(req);
+          if (res.ok && res.type === "basic") {
+            const c = await caches.open(CACHE_GAMBAR);
+            await c.put(req, res.clone()).catch(() => {});
+            const kunci = await c.keys();
+            if (kunci.length > MAKS_GAMBAR) {
+              await Promise.all(kunci.slice(0, kunci.length - MAKS_GAMBAR).map((k) => c.delete(k)));
+            }
+          }
+          return res;
+        } catch {
+          const ada = await caches.match(req);
+          return ada || Response.error();
+        }
+      })()
+    );
+    return;
+  }
+
   // Navigasi halaman: jaringan dulu, lalu cache, lalu halaman offline.
   if (req.mode === "navigate") {
     e.respondWith(
@@ -89,7 +127,11 @@ self.addEventListener("fetch", (e) => {
           const c = await caches.open(CACHE_HALAMAN);
           const ada = await c.match(req);
           if (ada) return ada;
+          // Halaman yang dipreca (beranda & halaman luring) ikut dicoba —
+          // tanpa ini beranda selalu diganti layar "Tidak ada sinyal".
           const inti = await caches.open(CACHE_INTI);
+          const punya = await inti.match(req);
+          if (punya) return punya;
           return (await inti.match("/offline")) || Response.error();
         }
       })()
