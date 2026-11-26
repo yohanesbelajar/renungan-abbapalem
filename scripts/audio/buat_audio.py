@@ -137,42 +137,64 @@ def simpan_manifest(supa: Supa, man: dict) -> None:
 
 # ----------------------------------------------------------------------- TTS
 
-def potong(naskah: str, maks: int = MAKS_PARAGRAF) -> list[str]:
-    """Pecah naskah jadi potongan <= maks karakter pada batas kalimat."""
+
+# Jeda setelah tiap jenis bagian (milidetik).
+#   ayat  — henti setelah rujukan ayat pembuka, sebelum konteks renungan
+#   isi   — antar KALIMAT di dalam isi renungan (Edge TTS hanya beri ~0,40 dtk
+#           setelah titik; Jo minta dua kali, jadi ditambah jeda sisipan)
+#   paragraf — tambahan di akhir paragraf supaya batas paragraf tetap terasa
+JEDA = {"judul": 800, "ayat": 1170, "label": 500}
+JEDA_KALIMAT = 470      # + sisa ekor ~0,33 dtk -> terukur ~0,80 dtk (2x dari 0,40)
+JEDA_PARAGRAF = 250     # tambahan di kalimat terakhir sebuah paragraf
+
+
+def potong_kalimat(teks: str, maks: int = MAKS_PARAGRAF) -> list[str]:
+    """Pecah satu paragraf jadi kalimat utuh (batas titik/tanya/seru).
+
+    Kalimat pendek digabung ke kalimat sebelumnya, dan kalimat yang diakhiri
+    titik dua atau koma tidak dipecah — memecahnya membuat intonasi turun di
+    tengah pikiran.
+    """
+    kasar = re.split(r"(?<=[.!?])\s+", teks.strip())
+    gabung: list[str] = []
+    for k in kasar:
+        k = k.strip()
+        if not k:
+            continue
+        if gabung and (len(k) < 40 or gabung[-1].rstrip().endswith((":", ","))):
+            gabung[-1] = gabung[-1] + " " + k
+        else:
+            gabung.append(k)
+    # jaga batas ukuran permintaan TTS
     hasil: list[str] = []
-    for para in naskah.split("\n\n"):
-        para = para.strip()
-        if not para:
+    for k in gabung:
+        if len(k) <= maks:
+            hasil.append(k)
             continue
-        if len(para) <= maks:
-            hasil.append(para)
-            continue
-        kalimat = re.split(r"(?<=[.!?])\s+", para)
         buf = ""
-        for k in kalimat:
-            if len(buf) + len(k) + 1 <= maks:
-                buf = (buf + " " + k).strip()
+        for bagian_k in re.split(r"(?<=[.!?])\s+", k):
+            if len(buf) + len(bagian_k) + 1 <= maks:
+                buf = (buf + " " + bagian_k).strip()
             else:
                 if buf:
                     hasil.append(buf)
-                buf = k
+                buf = bagian_k
         if buf:
             hasil.append(buf)
     return hasil
-
-
-# Jeda setelah tiap jenis bagian (milidetik). Ayat pembuka butuh henti panjang:
-# tanpa itu pembaca langsung melompat ke konteks renungan tanpa ruang merenung.
-JEDA = {"judul": 800, "ayat": 2200, "label": 700, "isi": 420}
 
 
 def pecah_berjeda(isi_html: str, judul: str | None) -> list[tuple[str, int]]:
     """Naskah -> [(potongan teks, jeda setelahnya ms)]."""
     keluar: list[tuple[str, int]] = []
     for teks, jenis in bagian(isi_html, judul):
-        tunggu = JEDA.get(jenis, JEDA["isi"])
-        for p in potong(teks):
-            keluar.append((p, tunggu))
+        if jenis == "isi":
+            kalimat = potong_kalimat(teks)
+            for i, k in enumerate(kalimat):
+                akhir = i == len(kalimat) - 1
+                keluar.append((k, JEDA_KALIMAT + (JEDA_PARAGRAF if akhir else 0)))
+        else:
+            keluar.append((teks, JEDA.get(jenis, JEDA_KALIMAT)))
     return keluar
 
 
@@ -254,10 +276,10 @@ def ambil_renungan(supa: Supa, sejak: str, slug: str | None) -> list[dict]:
 
 
 def hash_naskah(teks: str) -> str:
-    # "jeda-v3": skema jeda + pemangkasan sunyi ikut menentukan hasil audio,
+    # "jeda-v5": skema jeda + pemangkasan sunyi ikut menentukan hasil audio,
     # jadi perubahan skema wajib membuat ulang audio lama.
     return hashlib.sha256(
-        (teks + "|" + SUARA + "|" + TEMPO + "|jeda-v3").encode()
+        (teks + "|" + SUARA + "|" + TEMPO + "|jeda-v5").encode()
     ).hexdigest()[:16]
 
 
