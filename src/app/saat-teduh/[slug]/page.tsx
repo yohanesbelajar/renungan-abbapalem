@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import DevotionCardItem from "@/components/DevotionCardItem";
 import DevotionActions from "@/components/DevotionActions";
 import IsiTeduh from "@/components/IsiTeduh";
+import PemutarAudio from "@/components/PemutarAudio";
+import { audioUntuk, urlAudio } from "@/lib/audio";
 import { edisiLengkap } from "@/lib/edisi";
 import type { DevotionCard } from "@/lib/types";
 
@@ -62,6 +64,7 @@ export default async function DevotionPage({
   const lengkap = await edisiLengkap(slug);
   if (!lengkap) notFound();
   const { d, prev, next, related } = lengkap;
+  const audio = await audioUntuk(d.slug);
 
   // Bagian pribadi (heart/selesai) tetap dibaca langsung dari sesi pengunjung.
   const supabase = await createClient();
@@ -127,6 +130,15 @@ export default async function DevotionPage({
       </p>
 
       <div className="mt-6 h-px w-full bg-garis" />
+
+      {audio && (
+        <PemutarAudio
+          slug={d.slug}
+          judul={d.title}
+          src={urlAudio(audio.berkas)}
+          durasi={audio.durasi}
+        />
+      )}
 
       {/* Isi saat teduh: HTML editor Tiptap atau teks polos lama, rujukan ayat
           di dalamnya otomatis menjadi tautan pembuka ayat. */}

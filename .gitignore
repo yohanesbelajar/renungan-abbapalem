@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# log pembuat audio
+scripts/audio/riwayat.log
+scripts/audio/__pycache__/
