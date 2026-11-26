@@ -37,8 +37,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from naskah import bagian, naskah as buat_naskah  # noqa: E402
 
 BUCKET = "audio-renungan"
-SUARA = "id-ID-ArdiNeural"
-TEMPO = "-15%"
+# Suara wanita dipilih Jo 26 Nov 2026 setelah suara pria terdengar "pecah" pada
+# kecepatan 0,75x. Tempo +7% menyetarakan kecepatan Gadis dengan Ardi -15%
+# (terukur sama-sama 20,4 karakter/detik); tanpa itu Gadis terasa lebih lambat.
+SUARA = "id-ID-GadisNeural"
+TEMPO = "+7%"
 BITRATE = "48k"
 MAKS_PARAGRAF = 900          # karakter per permintaan TTS
 JEDA_MS = 420                # jeda antar paragraf
