@@ -34,7 +34,7 @@ import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from naskah import naskah as buat_naskah  # noqa: E402
+from naskah import bagian, naskah as buat_naskah  # noqa: E402
 
 BUCKET = "audio-renungan"
 SUARA = "id-ID-ArdiNeural"
@@ -161,38 +161,67 @@ def potong(naskah: str, maks: int = MAKS_PARAGRAF) -> list[str]:
     return hasil
 
 
+# Jeda setelah tiap jenis bagian (milidetik). Ayat pembuka butuh henti panjang:
+# tanpa itu pembaca langsung melompat ke konteks renungan tanpa ruang merenung.
+JEDA = {"judul": 800, "ayat": 2200, "label": 700, "isi": 420}
+
+
+def pecah_berjeda(isi_html: str, judul: str | None) -> list[tuple[str, int]]:
+    """Naskah -> [(potongan teks, jeda setelahnya ms)]."""
+    keluar: list[tuple[str, int]] = []
+    for teks, jenis in bagian(isi_html, judul):
+        tunggu = JEDA.get(jenis, JEDA["isi"])
+        for p in potong(teks):
+            keluar.append((p, tunggu))
+    return keluar
+
+
 async def ucap(teks: str, keluar: str, coba: int = 3) -> None:
+    """Sintesis satu potongan, lalu pangkas sunyi di ujungnya.
+
+    Edge TTS menyisakan ekor sunyi ±1,2 detik. Tanpa dipangkas, jeda antar
+    bagian jadi jauh lebih panjang dari yang dirancang (3,5 dtk bukan 2,2).
+    """
     import edge_tts
 
+    mentah = keluar + ".raw.mp3"
     for n in range(1, coba + 1):
         try:
             await asyncio.wait_for(
-                edge_tts.Communicate(teks, SUARA, rate=TEMPO).save(keluar), 180
+                edge_tts.Communicate(teks, SUARA, rate=TEMPO).save(mentah), 180
             )
-            if os.path.getsize(keluar) > 1000:
-                return
+            if os.path.getsize(mentah) > 1000:
+                break
             raise RuntimeError("berkas terlalu kecil")
         except Exception as e:
             if n == coba:
                 raise RuntimeError(f"TTS gagal setelah {coba} coba: {e}") from e
             await asyncio.sleep(1.5 * n)
 
-
-def gabung(potongan: list[str], folder: str, keluar: str) -> None:
-    """Gabung mp3 per potongan + jeda, encode ulang mono 24 kHz."""
-    jeda = os.path.join(folder, "jeda.mp3")
     subprocess.run(
-        ["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i",
-         "anullsrc=r=24000:cl=mono", "-t", str(JEDA_MS / 1000),
-         "-c:a", "libmp3lame", "-b:a", "48k", jeda],
+        ["ffmpeg", "-y", "-v", "error", "-i", mentah, "-af",
+         "silenceremove=stop_periods=-1:stop_silence=0.10:stop_threshold=-45dB",
+         "-c:a", "libmp3lame", "-b:a", BITRATE, "-ac", "1", "-ar", "24000", keluar],
         check=True,
     )
+    os.remove(mentah)
+
+
+def gabung(potongan: list[tuple[str, int]], folder: str, keluar: str) -> None:
+    """Gabung mp3 per potongan + jeda sesuai jenis bagian, encode mono 24 kHz."""
     daftar = os.path.join(folder, "daftar.txt")
     with open(daftar, "w") as f:
-        for i, p in enumerate(potongan):
-            f.write(f"file '{p}'\n")
-            if i != len(potongan) - 1:
-                f.write(f"file '{jeda}'\n")
+        for i, (berkas, jeda_ms) in enumerate(potongan):
+            f.write(f"file '{berkas}'\n")
+            if i != len(potongan) - 1 and jeda_ms > 0:
+                sunyi = os.path.join(folder, f"jeda{i:03d}.mp3")
+                subprocess.run(
+                    ["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i",
+                     "anullsrc=r=24000:cl=mono", "-t", f"{jeda_ms/1000:.3f}",
+                     "-c:a", "libmp3lame", "-b:a", "48k", sunyi],
+                    check=True,
+                )
+                f.write(f"file '{sunyi}'\n")
     subprocess.run(
         ["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0",
          "-i", daftar, "-c:a", "libmp3lame", "-b:a", BITRATE, "-ac", "1",
@@ -225,7 +254,11 @@ def ambil_renungan(supa: Supa, sejak: str, slug: str | None) -> list[dict]:
 
 
 def hash_naskah(teks: str) -> str:
-    return hashlib.sha256((teks + "|" + SUARA + "|" + TEMPO).encode()).hexdigest()[:16]
+    # "jeda-v3": skema jeda + pemangkasan sunyi ikut menentukan hasil audio,
+    # jadi perubahan skema wajib membuat ulang audio lama.
+    return hashlib.sha256(
+        (teks + "|" + SUARA + "|" + TEMPO + "|jeda-v3").encode()
+    ).hexdigest()[:16]
 
 
 def main() -> int:
@@ -267,13 +300,13 @@ def main() -> int:
 
         folder = tempfile.mkdtemp(prefix="ttsaudio-")
         try:
-            potongan_teks = potong(teks)
-            berkas = []
+            bag = pecah_berjeda(row["body"], row["title"])
+            berkas: list[tuple[str, int]] = []
             t0 = time.time()
-            for i, p in enumerate(potongan_teks):
+            for i, (p, jeda_ms) in enumerate(bag):
                 f = os.path.join(folder, f"p{i:03d}.mp3")
                 asyncio.run(ucap(p, f))
-                berkas.append(f)
+                berkas.append((f, jeda_ms))
             hasil = os.path.join(folder, "hasil.mp3")
             gabung(berkas, folder, hasil)
             detik = durasi(hasil)
@@ -292,7 +325,7 @@ def main() -> int:
             }
             simpan_manifest(supa, man)
             dibuat += 1
-            print(f"  + {slug}: {len(potongan_teks)} potong, {detik} dtk, "
+            print(f"  + {slug}: {len(bag)} potong, {detik} dtk, "
                   f"{ukuran/1024:.0f} KB, {time.time()-t0:.0f}s")
         except Exception as e:
             gagal += 1

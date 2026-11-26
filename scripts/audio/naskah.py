@@ -158,41 +158,64 @@ def _blok_html(isi: str) -> list[str]:
     return baris
 
 
-def naskah(isi_html: str, judul: str | None = None) -> str:
-    """HTML saat teduh -> naskah siap dibacakan (paragraf dipisah baris kosong)."""
-    paragraf: list[str] = []
+def bagian(isi_html: str, judul: str | None = None) -> list[tuple[str, str]]:
+    """HTML saat teduh -> daftar (teks, jenis) siap dibacakan.
+
+    jenis dipakai buat_audio.py untuk menentukan panjang jeda:
+      judul  — judul edisi
+      ayat   — baris rujukan ayat pembuka ("1 Petrus 4:12-13")
+      label  — penanda bagian ("Pengajaran", "Penerapan")
+      isi    — paragraf biasa, butir pertanyaan
+    """
+    hasil: list[tuple[str, str]] = []
     if judul:
-        paragraf.append(_bersih(judul.rstrip(".")))
+        hasil.append((_bersih(judul.rstrip(".")), "judul"))
 
     for b in _blok_html(isi_html):
         cocok = _LABEL.match(b)
         if cocok:
-            # "Pengajaran:" dibaca sebagai penanda bagian, tanpa titik dua.
-            paragraf.append(cocok.group(1))
+            hasil.append((cocok.group(1), "label"))
             continue
         t = b
         for pola in _BUANG_KALIMAT:
             t = pola.sub(" ", t)
+        # Jenis ditentukan dari teks MENTAH: setelah nama kitab dieja kalimatnya
+        # jadi jauh lebih panjang dan uji "hanya rujukan" tak lagi cocok.
+        mentah = re.sub(r"\s+", " ", t).strip(" ,;:")
+        jenis = "ayat" if _hanya_rujukan(mentah) else "isi"
         t = _bersih(t)
-        if t:
-            paragraf.append(t)
+        if not t:
+            continue
+        hasil.append((t, jenis))
 
     # Gabungkan blok pendek berurutan (butir daftar, potongan tabel) supaya
     # tidak terdengar terputus-putus satu kalimat per audio.
-    hasil: list[str] = []
-    mulai_gabung = 1 if judul else 0
-    for i, p in enumerate(paragraf):
+    gabung: list[tuple[str, str]] = []
+    for i, (p, jenis) in enumerate(hasil):
         if (
-            i > mulai_gabung
-            and hasil
-            and len(hasil[-1]) < 180
+            i > 0
+            and gabung
+            and jenis == gabung[-1][1] == "isi"
+            and len(gabung[-1][0]) < 180
             and len(p) < 180
-            and not hasil[-1].endswith((".", "?", "!"))
+            and not gabung[-1][0].endswith((".", "?", "!"))
         ):
-            hasil[-1] = hasil[-1] + " " + p
+            gabung[-1] = (gabung[-1][0] + " " + p, "isi")
         else:
-            hasil.append(p)
-    return "\n\n".join(hasil)
+            gabung.append((p, jenis))
+    return gabung
+
+
+def naskah(isi_html: str, judul: str | None = None) -> str:
+    """HTML saat teduh -> naskah siap dibacakan (paragraf dipisah baris kosong)."""
+    return "\n\n".join(t for t, _ in bagian(isi_html, judul))
+
+
+def _hanya_rujukan(teks: str) -> bool:
+    """True bila paragraf hampir seluruhnya nama kitab + pasal:ayat."""
+    sisa = _RE_RUJUKAN.sub("", teks)
+    sisa = re.sub(r"[\s,;.]", "", sisa)
+    return bool(teks) and len(teks) <= 160 and len(sisa) <= 6
 
 
 def _bersih(t: str) -> str:
