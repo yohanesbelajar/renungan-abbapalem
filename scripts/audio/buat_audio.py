@@ -359,8 +359,25 @@ def main() -> int:
             shutil.rmtree(folder, ignore_errors=True)
 
     if not a.tanpa_bersih and not a.kering:
-        hapus = [s for s, v in man.items()
-                 if (v.get("tanggal") or "9999") < batas.isoformat()]
+        # Retensi bergulir (perintah Jo 27 Nov 2026): 1 rekaman baru = 1 rekaman
+        # tertua dihapus, sehingga jumlah rekaman tetap 7.
+        #  * jendela tanggal tetap: slug di luar 7 hari terakhir dibuang;
+        #  * plafon jumlah: kalau masih lebih dari 7 (mis. audio lama yang
+        #    tanggalnya dekat), buang yang tanggalnya paling awal.
+        hari_ini_iso = hari_ini.isoformat()
+        kandidat = sorted(
+            (s for s in man
+             if (man[s].get("tanggal") or "9999") < batas.isoformat()
+             or (man[s].get("tanggal") or "") > hari_ini_iso),
+            key=lambda s: (man[s].get("tanggal") or "9999", s),
+        )
+        sisa = len(man) - len(kandidat)
+        if sisa > a.hari:
+            lebih = [s for s in man
+                     if s not in kandidat and (man[s].get("tanggal") or "")]
+            lebih.sort(key=lambda s: (man[s]["tanggal"], s))
+            kandidat += lebih[: sisa - a.hari]
+        hapus = kandidat
         for s in hapus:
             try:
                 supa.hapus(man[s]["berkas"])
